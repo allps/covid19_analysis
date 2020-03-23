@@ -17,15 +17,13 @@ import json
 async def confirmed(request):
 
     final_list = []
-    os.chdir(os.getcwd() + "/static/")
-    dataset = os.listdir()
-    print(dataset)
+    # os.chdir(os.getcwd() + "/data/")
+    dataset_directory_path = os.getcwd() + "/data/"
+
+    dataset_file_list = os.listdir(dataset_directory_path)
 
     # read the dataset
-
-    covid_df = pd.read_csv(dataset[0])
-
-    # convert into date time format
+    covid_df = pd.read_csv(dataset_directory_path + dataset_file_list[0])
 
     covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
     covid_df.drop(["SNo"], 1, inplace=True)
@@ -61,11 +59,13 @@ async def confirmed(request):
 async def mortalityRate(request):
 
     final_list = []
-    os.chdir(os.getcwd() + "/static/")
-    dataset = os.listdir()
+    # os.chdir(os.getcwd() + "/data/")
+    dataset_directory_path = os.getcwd() + "/data/"
+
+    dataset_file_list = os.listdir(dataset_directory_path)
 
     # read the dataset
-    covid_df = pd.read_csv(dataset[0])
+    covid_df = pd.read_csv(dataset_directory_path + dataset_file_list[0])
 
     # convert into date time format
 
@@ -90,13 +90,14 @@ async def mortalityRate(request):
 async def recoveryRate(request):
 
     final_list = []
-    os.chdir(os.getcwd() + "/static/")
-    dataset = os.listdir()
-    print(dataset)
+    # os.chdir(os.getcwd() + "/data/")
+    dataset_directory_path = os.getcwd() + "/data/"
+
+    dataset_file_list = os.listdir(dataset_directory_path)
 
     # read the dataset
 
-    covid_df = pd.read_csv(dataset[0])
+    covid_df = pd.read_csv(dataset_directory_path + dataset_file_list[0])
 
     # convert into date time format
 
@@ -123,13 +124,16 @@ async def countrywise(request):
     final_list = []
     req = request.path_params['country']
     print(req)
-    os.chdir(os.getcwd() + "/static/")
-    dataset = os.listdir()
+    # os.chdir(os.getcwd() + "/data/")
+    dataset_directory_path = os.getcwd() + "/data/"
+
+    dataset_file_list = os.listdir(dataset_directory_path)
+    print(dataset_directory_path + dataset_file_list[0])
 
     # read the dataset
-    covid_df = pd.read_csv(dataset[0])
+    covid_df = pd.read_csv(dataset_directory_path + dataset_file_list[0])
+    print(covid_df.head())
     # convert into date time format
-
     covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
     covid_df.drop(["SNo"], 1, inplace=True)
     country_data = covid_df[covid_df["Country/Region"] == req]
@@ -153,7 +157,7 @@ async def countrywise(request):
     return JSONResponse(json_str)
 
 routes = [
-    Mount('/static', app=StaticFiles(directory='static'), name='static'),
+    # Mount('/static', app=StaticFiles(directory='static'), name='static'),
 
     ################# daywise Analysis#################
     Route('/cases/confirmed', endpoint=confirmed, methods=["GET"]),
