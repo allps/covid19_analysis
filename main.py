@@ -188,9 +188,17 @@ async def countrywise(request):
 
         arr_xax = datewise_country.ObservationDate.to_numpy()
         x_list = arr_xax.tolist()
+
+        arr_recovered = datewise_country['Recovered'].to_numpy()
+        arr_deaths = datewise_country['Deaths'].to_numpy()
+        recovered_list = arr_recovered.tolist()
+        death_list = arr_deaths.tolist()
+
         dictionary = {
             "json_xax": x_list,
-            "json_yax": y_list
+            "confirmed": y_list,
+            "recovered": recovered_list,
+            "death": death_list
         }
 
         json_str = json.dumps(dictionary)
@@ -256,6 +264,7 @@ async def countryRecoveryRate(request):
         country_data = covid_df[covid_df["Country/Region"] == req]
         datewise_country = country_data.groupby(["ObservationDate"]).agg(
             {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
         datewise_country = country_data.groupby(["ObservationDate"]).agg(
             {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
@@ -364,7 +373,7 @@ routes = [
     ################ country wise Analysis ##############
 
     Route('/country/{country}', endpoint=countrywise, methods=["GET", "POST"]),
-    Route('/country/totalCases/{country}', endpoint=countryTotalCases, methods=["GET"]),
+    Route('/country/totalCases/{country}', endpoint=countryTotalCases, methods=["GET", "POST"]),
     Route('/country/mortalityRate/{country}', endpoint=countryMortalityRate, methods=["GET", "POST"]),
     Route('/country/recoveryRate/{country}', endpoint=countryRecoveryRate, methods=["GET", "POST"]),
 
