@@ -9,6 +9,8 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from dataloader import refresh_data
+
 
 async def totalCases(request):
     try:
@@ -376,6 +378,10 @@ routes = [
     Route('/country/totalCases/{country}', endpoint=countryTotalCases, methods=["GET", "POST"]),
     Route('/country/mortalityRate/{country}', endpoint=countryMortalityRate, methods=["GET", "POST"]),
     Route('/country/recoveryRate/{country}', endpoint=countryRecoveryRate, methods=["GET", "POST"]),
+
+
+    Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
+    Route('/system/clear_all', endpoint=refresh_data, methods=['GET'])
 
 ]
 
