@@ -26,11 +26,11 @@ async def totalCases(request):
 
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
-        print(covid_df.head())
+
+        print(covid_df.isnull().sum())
 
         datewise_df = covid_df.groupby(["ObservationDate"]).agg(
             {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-        print(datewise_df.head())
 
         # extract the information from the dataset
         total_countries_affected = len(covid_df["Country/Region"].unique())
@@ -61,16 +61,13 @@ async def confirmed(request):
 
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
-        print(covid_df.head())
-
 
        # grouping different types of cases as per the date
 
-        datewise_df = covid_df.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-        print(datewise_df.head())
+        datewise_df = covid_df.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
         # plot curve of no of confirmed cases
-
         arr_yax = datewise_df['Confirmed'].to_numpy()
         print(arr_yax)
         y_list = arr_yax.tolist()
@@ -78,9 +75,16 @@ async def confirmed(request):
         arr_xax = datewise_df.ObservationDate.to_numpy()
         x_list = arr_xax.tolist()
 
+        arr_recovered = datewise_df['Recovered'].to_numpy()
+        arr_deaths = datewise_df['Deaths'].to_numpy()
+        recovered_list = arr_recovered.tolist()
+        death_list = arr_deaths.tolist()
+
         dictionary = {
             "json_xax": x_list,
-            "json_yax": y_list
+            "json_yax": y_list,
+            "recovered": recovered_list,
+            "death": death_list
         }
 
         json_str = json.dumps(dictionary)
@@ -102,14 +106,15 @@ async def mortalityRate(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
 
-        datewise_df = covid_df.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_df = covid_df.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
         datewise_df["Mortality"] = (datewise_df["Deaths"] / datewise_df["Confirmed"]) * 100
 
         arr_yax = datewise_df['Mortality'].to_numpy()
         print(arr_yax)
         y_list = arr_yax.tolist()
 
-        arr_xax = datewise_df.ObservationDate.to_numpy()
+        arr_xax = datewise_df['ObservationDate'].to_numpy()
         x_list = arr_xax.tolist()
 
         dictionary = {
@@ -137,7 +142,9 @@ async def recoveryRate(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
 
-        datewise_df = covid_df.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_df = covid_df.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
         datewise_df["Recovery"] = (datewise_df["Recovered"] / datewise_df["Confirmed"]) * 100
 
         arr_yax = datewise_df['Recovery'].to_numpy()
@@ -173,8 +180,9 @@ async def countrywise(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
         country_data = covid_df[covid_df["Country/Region"] == req]
-        datewise_country = country_data.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-        print(datewise_country.tail())
+        datewise_country = country_data.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
 
         arr_yax = datewise_country['Confirmed'].to_numpy()
         print(arr_yax)
@@ -302,6 +310,43 @@ async def countryTotalCases(request):
     except:
         return JSONResponse("Something Wrong")
 
+async def perCountrymortality(request):
+    try:
+        dataset_directory_path = os.getcwd() + "/data/"
+
+        dataset_file_list = os.listdir(dataset_directory_path)
+        print(dataset_directory_path + dataset_file_list[0])
+
+        # read the dataset
+        covid_df = pd.read_csv(dataset_directory_path + dataset_file_list[0])
+        # convert into date time format
+        covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
+        covid_df.drop(["SNo"], 1, inplace=True)
+        countrywise_df = covid_df.groupby(["Country/Region"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        print(countrywise_df.head())
+
+        countrywise_df["Mortality"] = (countrywise_df["Deaths"] / countrywise_df["Confirmed"]) * 100
+
+        countrywise_plot_mortal = countrywise_df[countrywise_df["Confirmed"] > 50].sort_values(["Mortality"],
+                                                                                               ascending=False).head(25)
+        arr_yax = countrywise_plot_mortal['Country/Region'].to_numpy()
+        print(arr_yax)
+        y_list = arr_yax.tolist()
+
+        arr_xax = countrywise_plot_mortal['Mortality'].to_numpy()
+        x_list = arr_xax.tolist()
+
+        dictionary = {
+            "json_xax": x_list,
+            "json_yax": y_list
+        }
+
+        json_str = json.dumps(dictionary)
+        return JSONResponse(json_str)
+    except:
+        return JSONResponse("something wrong")
+
 routes = [
     # Mount('/static', app=StaticFiles(directory='static'), name='static'),
 
@@ -310,6 +355,7 @@ routes = [
     Route('/cases/confirmed', endpoint=confirmed, methods=["GET"]),
     Route('/mortalityRate', endpoint=mortalityRate, methods=["GET"]),
     Route('/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
+    Route('/perCountry/mortality', endpoint=perCountrymortality, methods = ['GET']),
 
     ################ country wise Analysis ##############
 
