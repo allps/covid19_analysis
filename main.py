@@ -1,19 +1,14 @@
+import json
+import os
+import uvicorn
+
+import pandas as pd
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse
-from starlette.routing import Route, Mount
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.staticfiles import StaticFiles
-from starlette.requests import Request
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import datetime as dt
-from datetime import timedelta
-import pandas as pd
-import numpy as np
-import os
-import json
+from starlette.responses import JSONResponse
+from starlette.routing import Route
+
 
 async def totalCases(request):
     try:
@@ -50,6 +45,7 @@ async def totalCases(request):
     except:
         return JSONResponse("Something Wrong")
 
+
 async def confirmed(request):
     try:
         dataset_directory_path = os.getcwd() + "/data/"
@@ -62,7 +58,7 @@ async def confirmed(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
 
-       # grouping different types of cases as per the date
+        # grouping different types of cases as per the date
 
         datewise_df = covid_df.groupby(["ObservationDate"]).agg(
             {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
@@ -91,6 +87,7 @@ async def confirmed(request):
         return JSONResponse(json_str)
     except:
         return JSONResponse("something wrong")
+
 
 async def mortalityRate(request):
     try:
@@ -126,6 +123,7 @@ async def mortalityRate(request):
         return JSONResponse(json_str)
     except:
         return JSONResponse("Something wrong")
+
 
 async def recoveryRate(request):
     try:
@@ -163,6 +161,7 @@ async def recoveryRate(request):
     except:
         return JSONResponse("Something wrong")
 
+
 async def countrywise(request):
     try:
         req = request.path_params['country']
@@ -182,7 +181,6 @@ async def countrywise(request):
         country_data = covid_df[covid_df["Country/Region"] == req]
         datewise_country = country_data.groupby(["ObservationDate"]).agg(
             {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-
 
         arr_yax = datewise_country['Confirmed'].to_numpy()
         print(arr_yax)
@@ -239,6 +237,7 @@ async def countryMortalityRate(request):
     except:
         return JSONResponse("Something Wrong")
 
+
 async def countryRecoveryRate(request):
     try:
         req = request.path_params['country']
@@ -257,7 +256,8 @@ async def countryRecoveryRate(request):
         country_data = covid_df[covid_df["Country/Region"] == req]
         datewise_country = country_data.groupby(["ObservationDate"]).agg(
             {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-        datewise_country = country_data.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_country = country_data.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
         datewise_country["Recovery"] = (datewise_country["Recovered"] / datewise_country["Confirmed"]) * 100
         arr_yax = datewise_country['Recovery'].to_numpy()
@@ -276,6 +276,7 @@ async def countryRecoveryRate(request):
         return JSONResponse(json_str)
     except:
         return JSONResponse("Something Wrong")
+
 
 async def countryTotalCases(request):
     try:
@@ -300,7 +301,6 @@ async def countryTotalCases(request):
         total_confirmed_cases = datewise_country["Confirmed"].iloc[-1]
         total_recovered_cases = datewise_country["Recovered"].iloc[-1]
         total_death_cases = datewise_country["Deaths"].iloc[-1]
-
 
         dictionary = {
             "confirmed": total_confirmed_cases,
@@ -350,6 +350,7 @@ async def perCountrymortality(request):
     except:
         return JSONResponse("something wrong")
 
+
 routes = [
     # Mount('/static', app=StaticFiles(directory='static'), name='static'),
 
@@ -358,7 +359,7 @@ routes = [
     Route('/cases', endpoint=confirmed, methods=["GET"]),
     Route('/mortalityRate', endpoint=mortalityRate, methods=["GET"]),
     Route('/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
-    Route('/perCountry/mortality', endpoint=perCountrymortality, methods = ['GET']),
+    Route('/perCountry/mortality', endpoint=perCountrymortality, methods=['GET']),
 
     ################ country wise Analysis ##############
 
