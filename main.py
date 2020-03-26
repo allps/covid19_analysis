@@ -82,7 +82,7 @@ async def confirmed(request):
 
         dictionary = {
             "json_xax": x_list,
-            "json_yax": y_list,
+            "confirmed": y_list,
             "recovered": recovered_list,
             "death": death_list
         }
@@ -352,7 +352,7 @@ routes = [
 
     ################# daywise Analysis (worldwide) #################
     Route('/cases/total', endpoint=totalCases, methods=["GET"]),
-    Route('/cases/confirmed', endpoint=confirmed, methods=["GET"]),
+    Route('/cases', endpoint=confirmed, methods=["GET"]),
     Route('/mortalityRate', endpoint=mortalityRate, methods=["GET"]),
     Route('/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
     Route('/perCountry/mortality', endpoint=perCountrymortality, methods = ['GET']),
