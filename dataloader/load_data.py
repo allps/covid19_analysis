@@ -1,5 +1,7 @@
-from starlette.responses import PlainTextResponse
-import requests, os, time, zipfile, shutil, logging
+from starlette.responses import PlainTextResponse, JSONResponse
+from datetime import datetime
+import pandas as pd
+import requests, os, time, zipfile, shutil, logging, re, json
 
 remote_urls = {
     'john_hopkins_repo': 'https://github.com/CSSEGISandData/COVID-19/archive/master.zip'
@@ -14,11 +16,13 @@ def clear_all_temp_data(request):
 
 def refresh_data(request):
     # get data from url
-    filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
-    dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
-    extracted_dir = extract_zipfile(dataset_zip_path)
+    # filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
+    # dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
+    # extracted_dir = extract_zipfile(dataset_zip_path)
+    t = get_combined_time_series_data_set(
+        '/media/schartz/disk1/Users/Schartz/code/project_corona/covid19_analysis/data/john_hopkins_repo_1585230198.1250603./COVID-19-master/csse_covid_19_data/csse_covid_19_daily_reports')
 
-    return PlainTextResponse(extracted_dir)
+    return JSONResponse(t)
 
 
 def fetch_file_from_url(remote_url: str, filename: str, method: str = 'GET') -> str:
@@ -69,3 +73,37 @@ def extract_zipfile(filepath: str, extract_directory: str = "") -> str:
 
     logging.info('Extracted ' + filepath + ' to ' + extract_directory)
     return extract_directory
+
+
+def get_combined_time_series_data_set(dataset_directory: str):
+    """
+    Returns a row wise dictionary of all dataset files combined from
+    time series data directory
+    :param dataset_directory: str, directory of the time-series dataset
+    :return: dict, a row wise dictionary created from the data frame
+    """
+    filename_regex = r'^((0|1)\d{1})-((0|1|2)\d{1})-((19|20)\d{2}).csv'
+    dataset_file_list = []
+
+    for item in os.listdir(dataset_directory):
+        if re.match(filename_regex, item):
+            dataset_file_list.append(item)
+
+    dataset_file_list.sort(key=lambda date: datetime.strptime(date.replace('.csv', ''), '%m-%d-%Y'))
+
+    mini_data_frame_list = []
+
+    for item in dataset_file_list:
+        mini_data_frame_list.append(pd.read_csv(dataset_directory + os.sep + item))
+
+    final_data_frame = pd.concat(mini_data_frame_list)
+    final_data_frame.reset_index(drop=True, inplace=True)
+    print(final_data_frame.info())
+    print('#################################################################')
+    print(final_data_frame.head())
+    print('#################################################################')
+    print(final_data_frame.tail())
+    final_data_frame.fillna('', inplace=True)
+    t = final_data_frame.to_dict(orient='records')
+    return t
+
