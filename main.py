@@ -3,17 +3,11 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.staticfiles import StaticFiles
-from starlette.requests import Request
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-import datetime as dt
-from datetime import timedelta
 import pandas as pd
-import numpy as np
 import os
 import json
+import uvicorn
+
 
 async def totalCases(request):
     try:
@@ -50,6 +44,7 @@ async def totalCases(request):
     except:
         return JSONResponse("Something Wrong")
 
+
 async def confirmed(request):
     try:
         dataset_directory_path = os.getcwd() + "/data/"
@@ -63,10 +58,10 @@ async def confirmed(request):
         covid_df.drop(["SNo"], 1, inplace=True)
         print(covid_df.head())
 
+        # grouping different types of cases as per the date
 
-       # grouping different types of cases as per the date
-
-        datewise_df = covid_df.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_df = covid_df.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
         print(datewise_df.head())
 
         # plot curve of no of confirmed cases
@@ -88,6 +83,7 @@ async def confirmed(request):
     except:
         return JSONResponse("something wrong")
 
+
 async def mortalityRate(request):
     try:
         dataset_directory_path = os.getcwd() + "/data/"
@@ -102,7 +98,8 @@ async def mortalityRate(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
 
-        datewise_df = covid_df.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_df = covid_df.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
         datewise_df["Mortality"] = (datewise_df["Deaths"] / datewise_df["Confirmed"]) * 100
 
         arr_yax = datewise_df['Mortality'].to_numpy()
@@ -122,6 +119,7 @@ async def mortalityRate(request):
     except:
         return JSONResponse("Something wrong")
 
+
 async def recoveryRate(request):
     try:
         dataset_directory_path = os.getcwd() + "/data/"
@@ -137,7 +135,8 @@ async def recoveryRate(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
 
-        datewise_df = covid_df.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_df = covid_df.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
         datewise_df["Recovery"] = (datewise_df["Recovered"] / datewise_df["Confirmed"]) * 100
 
         arr_yax = datewise_df['Recovery'].to_numpy()
@@ -156,6 +155,7 @@ async def recoveryRate(request):
     except:
         return JSONResponse("Something wrong")
 
+
 async def countrywise(request):
     try:
         req = request.path_params['country']
@@ -173,7 +173,8 @@ async def countrywise(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
         country_data = covid_df[covid_df["Country/Region"] == req]
-        datewise_country = country_data.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_country = country_data.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
         print(datewise_country.tail())
 
         arr_yax = datewise_country['Confirmed'].to_numpy()
@@ -231,6 +232,7 @@ async def countryMortalityRate(request):
     except:
         return JSONResponse("Something Wrong")
 
+
 async def countryRecoveryRate(request):
     try:
         req = request.path_params['country']
@@ -247,7 +249,8 @@ async def countryRecoveryRate(request):
         covid_df["ObservationDate"] = pd.to_datetime(covid_df["ObservationDate"])
         covid_df.drop(["SNo"], 1, inplace=True)
         country_data = covid_df[covid_df["Country/Region"] == req]
-        datewise_country = country_data.groupby(["ObservationDate"]).agg({"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+        datewise_country = country_data.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
         datewise_country["Recovery"] = (datewise_country["Recovered"] / datewise_country["Confirmed"]) * 100
         arr_yax = datewise_country['Recovery'].to_numpy()
@@ -266,6 +269,7 @@ async def countryRecoveryRate(request):
         return JSONResponse(json_str)
     except:
         return JSONResponse("Something Wrong")
+
 
 async def countryTotalCases(request):
     try:
@@ -291,7 +295,6 @@ async def countryTotalCases(request):
         total_recovered_cases = datewise_country["Recovered"].iloc[-1]
         total_death_cases = datewise_country["Deaths"].iloc[-1]
 
-
         dictionary = {
             "confirmed": total_confirmed_cases,
             "recovered": total_recovered_cases,
@@ -301,6 +304,7 @@ async def countryTotalCases(request):
         return JSONResponse(json_str)
     except:
         return JSONResponse("Something Wrong")
+
 
 routes = [
     # Mount('/static', app=StaticFiles(directory='static'), name='static'),
@@ -325,3 +329,6 @@ middleware = [
 ]
 
 app = Starlette(debug=True, routes=routes, middleware=middleware)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=5000)

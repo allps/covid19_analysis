@@ -1,0 +1,7 @@
+matplotlib==3.2.1
+uvicorn==0.11.3 
+starlette==0.13.2 
+pandas==1.0.3  
+aiofiles==0.4.0  
+scipy==1.4.1
+seaborn==0.10.0
