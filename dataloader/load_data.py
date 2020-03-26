@@ -1,10 +1,10 @@
 from starlette.responses import PlainTextResponse
-import requests, os, time, zipfile, shutil
+import requests, os, time, zipfile, shutil, logging
 
 remote_urls = {
     'john_hopkins_repo': 'https://github.com/CSSEGISandData/COVID-19/archive/master.zip'
 }
-dataset_directory_path = os.getcwd() + "/data/"
+dataset_directory_path = os.getcwd() + os.sep + "data" + os.sep
 
 
 def clear_all_temp_data(request):
@@ -31,15 +31,20 @@ def fetch_file_from_url(remote_url: str, filename: str, method: str = 'GET') -> 
     :return: str, absolute path of the downloaded file on disk
     """
 
+    logging.info('Begin download of ' + remote_url)
+
     if not os.path.isdir(dataset_directory_path):
         os.makedirs(dataset_directory_path, exist_ok=True)
 
-    req = requests.get(remote_url)
-    with open(dataset_directory_path + filename, 'wb') as f:
-        for chunk in req.iter_content(100000):
-            f.write(chunk)
+    # do not download in all at once. Stream instead.
+    with requests.get(remote_url, stream=True) as resp:
+        with open(dataset_directory_path + filename, 'wb') as f:
+            # Do not overflow the RAM. Download the stream in chunks of 1MB
+            for chunk in resp.iter_content(1000000):
+                f.write(chunk)
 
     f.close()
+    logging.info('Downloaded ' + remote_url + ' to ' + dataset_directory_path + filename)
     return dataset_directory_path + filename
 
 
@@ -52,6 +57,8 @@ def extract_zipfile(filepath: str, extract_directory: str = "") -> str:
     :return: str, absolute path of the directory where zip is extracted
     """
 
+    logging.info('Begin extracting ' + filepath)
+
     if extract_directory == '':
         extract_directory = os.path.split(filepath)[0] + os.sep + os.path.split(filepath)[1].replace('zip', '')
     else:
@@ -60,4 +67,5 @@ def extract_zipfile(filepath: str, extract_directory: str = "") -> str:
     with zipfile.ZipFile(filepath, "r") as z:
         z.extractall(extract_directory)
 
+    logging.info('Extracted ' + filepath + ' to ' + extract_directory)
     return extract_directory
