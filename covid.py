@@ -1,5 +1,6 @@
 import uvicorn
 import pandas as pd
+import json
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
@@ -8,10 +9,11 @@ from starlette.routing import Route
 import pymongo
 from pymongo import MongoClient
 from dataloader import refresh_data
+
 mongo_client = MongoClient('mongodb://localhost:27017/')
 
-async def allCases(request):
 
+async def allCases(request):
     mydb = mongo_client["covid19"]
     mycol = mydb["visualizations"]
 
@@ -20,10 +22,36 @@ async def allCases(request):
 
     return JSONResponse(x)
 
-async def mortalityRate():
+
+async def mortalityRate(request):
     mydb = mongo_client["covid19"]
     mycol = mydb["visualizations"]
-    return JSONResponse("qwertyu")
+
+    for x in mycol.find({}, {"_id": 0, "json_xax": 1, "mortality": 1}):
+        print("qwertyu")
+
+    return JSONResponse(x)
+
+
+async def recoveryRate(request):
+    mydb = mongo_client["covid19"]
+    mycol = mydb["visualizations"]
+
+    for x in mycol.find({}, {"_id": 0, "json_xax": 1, "recoveryRate": 1}):
+        print("qwertyu")
+
+    return JSONResponse(x)
+
+
+async def totalCasesCount(request):
+    mydb = mongo_client["covid19"]
+    mycol = mydb["visualizations"]
+
+    for x in mycol.find({}, {"_id": 0, "totalNumberConfirmed": 1, "totalRecovered": 1, "totalDeaths": 1}):
+        print(x)
+
+    return JSONResponse(x)
+
 
 routes = [
     # Mount('/static', app=StaticFiles(directory='static'), name='static'),
@@ -32,17 +60,9 @@ routes = [
 
     Route('/v1/cases', endpoint=allCases, methods=["GET"]),
     Route('/v1/mortalityRate', endpoint=mortalityRate, methods=["GET"]),
-    # Route('/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
+    Route('/v1/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
+    Route('/v1/cases/total', endpoint=totalCasesCount, methods=["GET"]),
     # Route('/perCountry/mortality', endpoint=perCountrymortality, methods=['GET']),
-    # Route('/cases/total', endpoint=totalCases, methods=["GET"]),
-
-    ################ country wise Analysis ##############
-
-    # Route('/country/{country}', endpoint=countrywise, methods=["GET", "POST"]),
-    # Route('/country/totalCases/{country}', endpoint=countryTotalCases, methods=["GET", "POST"]),
-    # Route('/country/mortalityRate/{country}', endpoint=countryMortalityRate, methods=["GET", "POST"]),
-    # Route('/country/recoveryRate/{country}', endpoint=countryRecoveryRate, methods=["GET", "POST"]),
-
 
     Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=refresh_data, methods=['GET'])

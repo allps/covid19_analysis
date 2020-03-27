@@ -142,12 +142,38 @@ def get_combined_time_series_data_set(dataset_directory: str):
     death_list = arr_deaths.tolist()
     confirmed_list = arr_confirmed.tolist()
     x_list = arr_xax.tolist()
+    datewise_df.fillna(0, inplace=True)
+    print('###############################################3')
+    print(datewise_df.isnull().values.any())
+    print('###############################################3')
+    datewise_df["Mortality"] = (datewise_df["Deaths"] / datewise_df["Confirmed"]) * 100
+    datewise_df["Recovery"] = (datewise_df["Recovered"] / datewise_df["Confirmed"]) * 100
+
+    datewise_df.fillna(0, inplace=True)
+    print('###############################################3')
+    print(datewise_df.isnull().values.any())
+    print('###############################################4')
+
+    arr_mortality = datewise_df['Mortality'].to_numpy()
+    mortality_list = arr_mortality.tolist()
+
+    arr_recovery = datewise_df['Recovery'].to_numpy()
+    recovery_list = arr_recovery.tolist()
+
+    total_confirmed_cases = datewise_df["Confirmed"].sum()
+    total_recovered_cases = datewise_df["Recovered"].sum()
+    total_deaths = datewise_df["Deaths"].sum()
 
     dictionary = {
         "json_xax": x_list,
         "confirmed": confirmed_list,
         "recovered": recovered_list,
-        "death": death_list
+        "death": death_list,
+        "mortality": mortality_list,
+        "recoveryRate": recovery_list,
+        "totalNumberConfirmed": total_confirmed_cases,
+        "totalRecovered": total_recovered_cases,
+        "totalDeaths": total_deaths
     }
 
     # t = dictionary.to_dict(orient='records')
