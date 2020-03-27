@@ -43,7 +43,7 @@ async def totalCases(request):
         }
 
         json_str = json.dumps(dictionary)
-        return JSONResponse(json_str)
+        return JSONResponse(dictionary)
     except:
         return JSONResponse("Something Wrong")
 
@@ -86,7 +86,7 @@ async def confirmed(request):
         }
 
         json_str = json.dumps(dictionary)
-        return JSONResponse(json_str)
+        return JSONResponse(dictionary)
     except:
         return JSONResponse("something wrong")
 
@@ -357,7 +357,7 @@ async def perCountrymortality(request):
         }
 
         json_str = json.dumps(dictionary)
-        return JSONResponse(json_str)
+        return JSONResponse(dictionary)
     except:
         return JSONResponse("something wrong")
 
