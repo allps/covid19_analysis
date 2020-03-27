@@ -131,7 +131,15 @@ def get_combined_time_series_data_set(dataset_directory: str):
     final_data_frame["Last Update"] = pd.to_datetime(final_data_frame["Last Update"])
     datewise_df = final_data_frame.groupby(["Last Update"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-    print(datewise_df)
+    print(datewise_df.head())
+
+    countrywise_df = final_data_frame.groupby(["Country/Region"]).agg(
+        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
+    print(countrywise_df.info())
+
+    countrywise_df.drop(countrywise_df.index[0], inplace=True)
+    print(countrywise_df.head())
 
     arr_recovered = datewise_df['Recovered'].to_numpy()
     arr_deaths = datewise_df['Deaths'].to_numpy()
@@ -164,6 +172,15 @@ def get_combined_time_series_data_set(dataset_directory: str):
     total_recovered_cases = datewise_df["Recovered"].sum()
     total_deaths = datewise_df["Deaths"].sum()
 
+    countrywise_df["perCountryMortality"] = (countrywise_df["Deaths"] / countrywise_df["Confirmed"]) * 100
+    countrywise_plot_mortal = countrywise_df[countrywise_df["Confirmed"] > 50].sort_values(["perCountryMortality"],
+                                                                                           ascending=False).head(25)
+    arr_countries = countrywise_plot_mortal['Country/Region'].to_numpy()
+    countries_list = arr_countries.tolist()
+
+    arr_perCountry_mortality = countrywise_plot_mortal['perCountryMortality'].to_numpy()
+    arr_perCountry_mortality_list = arr_perCountry_mortality.tolist()
+
     dictionary = {
         "json_xax": x_list,
         "confirmed": confirmed_list,
@@ -173,7 +190,9 @@ def get_combined_time_series_data_set(dataset_directory: str):
         "recoveryRate": recovery_list,
         "totalNumberConfirmed": total_confirmed_cases,
         "totalRecovered": total_recovered_cases,
-        "totalDeaths": total_deaths
+        "totalDeaths": total_deaths,
+        "countries": countries_list,
+        "perCountryMortality": arr_perCountry_mortality_list
     }
 
     # t = dictionary.to_dict(orient='records')
