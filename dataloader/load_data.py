@@ -1,7 +1,13 @@
 from starlette.responses import PlainTextResponse, JSONResponse
 from datetime import datetime
 import pandas as pd
+import pymongo
 import requests, os, time, zipfile, shutil, logging, re, json
+
+from pymongo import MongoClient
+print("pymongo version:", pymongo.version)
+
+
 
 remote_urls = {
     'john_hopkins_repo': 'https://github.com/CSSEGISandData/COVID-19/archive/master.zip'
@@ -15,14 +21,24 @@ def clear_all_temp_data(request):
 
 
 def refresh_data(request):
+    mongo_client = MongoClient('mongodb://localhost:27017/')
+
+    mydb = mongo_client["covid19"]
+    mycol = mydb["visualizations"]
+
+    print(mongo_client.list_database_names())
+    print(mydb.list_collection_names())
+
     # get data from url
     # filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
     # dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
     # extracted_dir = extract_zipfile(dataset_zip_path)
     t = get_combined_time_series_data_set(
-        '/media/schartz/disk1/Users/Schartz/code/project_corona/covid19_analysis/data/john_hopkins_repo_1585230198.1250603./COVID-19-master/csse_covid_19_data/csse_covid_19_daily_reports')
+        r"C:\Users\91958\covid19_analysis\data\john_hopkins_repo_1585245624.2873893\COVID-19-master\csse_covid_19_data\csse_covid_19_daily_reports")
 
-    return JSONResponse(t)
+    mycol.insert(t)
+    # print(x.inserted_ids)
+    return JSONResponse("qwertyu")
 
 
 def fetch_file_from_url(remote_url: str, filename: str, method: str = 'GET') -> str:
@@ -104,6 +120,36 @@ def get_combined_time_series_data_set(dataset_directory: str):
     print('#################################################################')
     print(final_data_frame.tail())
     final_data_frame.fillna('', inplace=True)
-    t = final_data_frame.to_dict(orient='records')
-    return t
+    print(final_data_frame.info())
+
+    final_data_frame["Confirmed"] = pd.to_numeric(final_data_frame['Confirmed'], errors='coerce')
+    final_data_frame["Recovered"] = pd.to_numeric(final_data_frame['Recovered'], errors='coerce')
+    final_data_frame["Deaths"] = pd.to_numeric(final_data_frame['Deaths'], errors='coerce')
+
+    print(final_data_frame.info())
+
+    final_data_frame["Last Update"] = pd.to_datetime(final_data_frame["Last Update"])
+    datewise_df = final_data_frame.groupby(["Last Update"]).agg(
+        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+    print(datewise_df)
+
+    arr_recovered = datewise_df['Recovered'].to_numpy()
+    arr_deaths = datewise_df['Deaths'].to_numpy()
+    arr_confirmed = datewise_df['Confirmed'].to_numpy()
+    arr_xax = datewise_df['Last Update'].to_numpy()
+
+    recovered_list = arr_recovered.tolist()
+    death_list = arr_deaths.tolist()
+    confirmed_list = arr_confirmed.tolist()
+    x_list = arr_xax.tolist()
+
+    dictionary = {
+        "json_xax": x_list,
+        "confirmed": confirmed_list,
+        "recovered": recovered_list,
+        "death": death_list
+    }
+
+    # t = dictionary.to_dict(orient='records')
+    return dictionary
 
