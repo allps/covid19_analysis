@@ -115,44 +115,45 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     final_data_frame = pd.concat(mini_data_frame_list)
     final_data_frame.reset_index(drop=True, inplace=True)
-    print(final_data_frame.info())
-    print('#################################################################')
-    print(final_data_frame.head())
-    print('#################################################################')
-    print(final_data_frame.tail())
+    # print(final_data_frame.info())
+    # print('#################################################################')
+    # print(final_data_frame.head())
+    # print('#################################################################')
+    # print(final_data_frame.tail())
     final_data_frame.fillna('', inplace=True)
-    print(final_data_frame.info())
+    # print(final_data_frame.info())
 
     final_data_frame["Confirmed"] = pd.to_numeric(final_data_frame['Confirmed'], errors='coerce')
     final_data_frame["Recovered"] = pd.to_numeric(final_data_frame['Recovered'], errors='coerce')
     final_data_frame["Deaths"] = pd.to_numeric(final_data_frame['Deaths'], errors='coerce')
 
-    print(final_data_frame.info())
+    # print(final_data_frame.info())
 
     final_data_frame["Last Update"] = pd.to_datetime(final_data_frame["Last Update"])
     datewise_df = final_data_frame.groupby(["Last Update"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-    print(datewise_df.head())
+
+
 
     countrywise_df = final_data_frame.groupby(["Country/Region"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
-    print(countrywise_df.info())
+    # print(countrywise_df.info())
 
     countrywise_df.drop(countrywise_df.index[0], inplace=True)
-    print(countrywise_df.head())
+    # print(countrywise_df.head())
 
     countrywise_df2 = final_data_frame.groupby(["Country_Region"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
     countrywise_df2.drop(countrywise_df2.index[0], inplace=True)
     countrywise_df2.rename(columns={"Country_Region": "Country/Region"}, inplace=True)
-    print("qwertyuioppppppppppppppppp")
-    print(countrywise_df2.info())
-    print(countrywise_df2.head())
+    # print("qwertyuioppppppppppppppppp")
+    # print(countrywise_df2.info())
+    # print(countrywise_df2.head())
 
     countrywise_df3 = pd.concat([countrywise_df, countrywise_df2]).drop_duplicates().reset_index(drop=True)
-    print("zxcvbnm,")
+    # print("zxcvbnm,")
     countrywise_df3["perCountryMortality"] = (countrywise_df3["Deaths"] / countrywise_df3["Confirmed"]) * 100
 
     countrywise_df3["Country/Region"] = countrywise_df3["Country/Region"].str.replace(' ', '')
@@ -163,7 +164,7 @@ def get_combined_time_series_data_set(dataset_directory: str):
     # print(countrywise_df3.head())
 
     countrywise_df3['Country/Region'] = countrywise_df3['Country/Region'].str.lower()
-    print(countrywise_df3.head())
+    # print(countrywise_df3.head())
 
     arr_recovered = datewise_df['Recovered'].to_numpy()
     arr_deaths = datewise_df['Deaths'].to_numpy()
@@ -175,16 +176,16 @@ def get_combined_time_series_data_set(dataset_directory: str):
     confirmed_list = arr_confirmed.tolist()
     x_list = arr_xax.tolist()
     datewise_df.fillna(0, inplace=True)
-    print('###############################################3')
-    print(datewise_df.isnull().values.any())
-    print('###############################################3')
+    # print('###############################################3')
+    # print(datewise_df.isnull().values.any())
+    # print('###############################################3')
     datewise_df["Mortality"] = (datewise_df["Deaths"] / datewise_df["Confirmed"]) * 100
     datewise_df["Recovery"] = (datewise_df["Recovered"] / datewise_df["Confirmed"]) * 100
 
     datewise_df.fillna(0, inplace=True)
-    print('###############################################3')
-    print(datewise_df.isnull().values.any())
-    print('###############################################4')
+    # print('###############################################3')
+    # print(datewise_df.isnull().values.any())
+    # print('###############################################4')
 
     arr_mortality = datewise_df['Mortality'].to_numpy()
     mortality_list = arr_mortality.tolist()
@@ -196,9 +197,8 @@ def get_combined_time_series_data_set(dataset_directory: str):
     total_recovered_cases = datewise_df["Recovered"].sum()
     total_deaths = datewise_df["Deaths"].sum()
 
-    countrywise_df["perCountryMortality"] = (countrywise_df["Deaths"] / countrywise_df["Confirmed"]) * 100
-    countrywise_plot_mortal = countrywise_df[countrywise_df["Confirmed"] > 50].sort_values(["perCountryMortality"],
-                                                                                           ascending=False).head(383)
+    countrywise_plot_mortal = countrywise_df3[countrywise_df3["Confirmed"] > 50].sort_values(["perCountryMortality"],
+                                                                                           ascending=False).head(225)
 
     arr_countries = countrywise_plot_mortal['Country/Region'].to_numpy()
     countries_list = arr_countries.tolist()
@@ -230,8 +230,8 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     # for countryWise data (saved basic data of each country)--------
 
-    print(final_data_frame.tail())
-    print(countrywise_df3.head())
+    # print(final_data_frame.tail())
+    # print(countrywise_df3.head())
 
     dateTimeObj = datetime.now()
     print(dateTimeObj)
@@ -257,7 +257,6 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     mongo_client = MongoClient('mongodb://localhost:27017/')
     mydb = mongo_client["covid19"]
-    # mycol3 = mydb["country_wise_data"]
     mydb["country_wise_data"].insert_many(country_wise_data_to_be_thrown_into_db)
 
     return dictionary

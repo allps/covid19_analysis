@@ -2,7 +2,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from pymongo import MongoClient
 from dataloader import refresh_data
-
+import json
 mongo_db_url = r'mongodb://localhost:27017/'
 database_name = r'covid19'
 
@@ -30,7 +30,20 @@ async def all_cases_cumulative(request):
         x = collection.find_one({}, {"_id": 0, "json_xax": 1, "confirmed": 1, "recovered": 1, "death": 10})
         return JSONResponse(x)
 
-
+async def country_data_found(request):
+    try:
+        req = request.path_params['country']
+        print(req)
+        with MongoClient(mongo_db_url) as client:
+            db = client[database_name]
+            collection = db.country_wise_data
+            myquery = {"name": req}
+            mydoc = collection.find(myquery, {"_id": 0})
+            for x in mydoc:
+                print(x)
+            return JSONResponse(x)
+    except:
+        return JSONResponse({"country not found": req})
 
 
 # async def mortalityRate(request):
