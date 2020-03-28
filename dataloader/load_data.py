@@ -223,10 +223,10 @@ def get_combined_time_series_data_set(dataset_directory: str):
     # for country_table data---------
     country_records = countrywise_df3.to_dict(orient='records')
 
-    # mongo_client = MongoClient('mongodb://localhost:27017/')
-    # mydb = mongo_client["covid19"]
-    # mycol2 = mydb["countries_table"]
-    # mycol2.insert_many(country_records)
+    mongo_client = MongoClient('mongodb://localhost:27017/')
+    mydb = mongo_client["covid19"]
+    mycol2 = mydb["countries_table"]
+    mycol2.insert_many(country_records)
 
     # for countryWise data (saved basic data of each country)--------
 
@@ -239,13 +239,26 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     print('Current Timestamp : ', timestampStr)
 
-    dictionary2 = {}
 
+    country_wise_data_to_be_thrown_into_db = []
+    for row_number in countrywise_df3.index:
+        tmp_dict = {
+            "name": countrywise_df3['Country/Region'][row_number],
+            "basic": {
+                "confirmed": countrywise_df3['Confirmed'][row_number],
+                "recovered": countrywise_df3['Recovered'][row_number],
+                "deaths": countrywise_df3['Deaths'][row_number],
+                "mortality": countrywise_df3['perCountryMortality'][row_number]
+            },
+            "detailed": {},
+            "created_at": timestampStr
+        }
+        country_wise_data_to_be_thrown_into_db.append(tmp_dict)
 
-    # mongo_client = MongoClient('mongodb://localhost:27017/')
-    # mydb = mongo_client["covid19"]
-    # mycol3 = mydb["country_wise_data"]
-    # mycol3.insert_many(country_basic_data)
+    mongo_client = MongoClient('mongodb://localhost:27017/')
+    mydb = mongo_client["covid19"]
+    mycol3 = mydb["country_wise_data"]
+    mycol3.insert_many(country_wise_data_to_be_thrown_into_db)
 
     return dictionary
 
