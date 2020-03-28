@@ -9,7 +9,8 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from dataloader import refresh_data
+from dataloader import refresh_data, clear_all_temp_data
+from api import all_cases, total_cases_count
 
 
 async def totalCases(request):
@@ -366,8 +367,8 @@ routes = [
     # Mount('/static', app=StaticFiles(directory='static'), name='static'),
 
     ################# daywise Analysis (worldwide) #################
-    Route('/cases/total', endpoint=totalCases, methods=["GET"]),
-    Route('/cases', endpoint=confirmed, methods=["GET"]),
+    Route('/cases/total', endpoint=total_cases_count, methods=["GET"]),
+    Route('/cases', endpoint=all_cases, methods=["GET"]),
     Route('/mortalityRate', endpoint=mortalityRate, methods=["GET"]),
     Route('/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
     Route('/perCountry/mortality', endpoint=perCountrymortality, methods=['GET']),
@@ -381,7 +382,7 @@ routes = [
 
 
     Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
-    Route('/system/clear_all', endpoint=refresh_data, methods=['GET'])
+    Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET'])
 
 ]
 
