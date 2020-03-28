@@ -149,7 +149,16 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     countrywise_df3 = pd.concat([countrywise_df, countrywise_df2]).drop_duplicates().reset_index(drop=True)
     print("zxcvbnm,")
-    print(countrywise_df3.info())
+    countrywise_df3["perCountryMortality"] = (countrywise_df3["Deaths"] / countrywise_df3["Confirmed"]) * 100
+
+    countrywise_df3["Country/Region"] = countrywise_df3["Country/Region"].str.replace(' ', '')
+
+    countrywise_df3.drop_duplicates(subset="Country/Region", keep="last", inplace=True)
+
+    # print(countrywise_df3.info())
+    # print(countrywise_df3.head())
+
+    countrywise_df3['Country/Region'] = countrywise_df3['Country/Region'].str.lower()
     print(countrywise_df3.head())
 
     arr_recovered = datewise_df['Recovered'].to_numpy()
@@ -183,9 +192,10 @@ def get_combined_time_series_data_set(dataset_directory: str):
     total_recovered_cases = datewise_df["Recovered"].sum()
     total_deaths = datewise_df["Deaths"].sum()
 
-    countrywise_df3["perCountryMortality"] = (countrywise_df3["Deaths"] / countrywise_df3["Confirmed"]) * 100
-    countrywise_plot_mortal = countrywise_df3[countrywise_df3["Confirmed"] > 50].sort_values(["perCountryMortality"],
+    countrywise_df["perCountryMortality"] = (countrywise_df["Deaths"] / countrywise_df["Confirmed"]) * 100
+    countrywise_plot_mortal = countrywise_df[countrywise_df["Confirmed"] > 50].sort_values(["perCountryMortality"],
                                                                                            ascending=False).head(383)
+
     arr_countries = countrywise_plot_mortal['Country/Region'].to_numpy()
     countries_list = arr_countries.tolist()
 
@@ -206,12 +216,32 @@ def get_combined_time_series_data_set(dataset_directory: str):
         "perCountryMortality": arr_perCountry_mortality_list
     }
 
+    # for country_table data---------
     country_records = countrywise_df3.to_dict(orient='records')
 
-    mongo_client = MongoClient('mongodb://localhost:27017/')
-    mydb = mongo_client["covid19"]
-    mycol2 = mydb["countries_table"]
-    mycol2.insert_many(country_records)
+    # mongo_client = MongoClient('mongodb://localhost:27017/')
+    # mydb = mongo_client["covid19"]
+    # mycol2 = mydb["countries_table"]
+    # mycol2.insert_many(country_records)
+
+    # for countryWise data (saved basic data of each country)--------
+
+    print(final_data_frame.tail())
+    print(countrywise_df3.head())
+
+    dateTimeObj = datetime.now()
+    print(dateTimeObj)
+    timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+
+    print('Current Timestamp : ', timestampStr)
+
+    dictionary2 = {}
+
+
+    # mongo_client = MongoClient('mongodb://localhost:27017/')
+    # mydb = mongo_client["covid19"]
+    # mycol3 = mydb["country_wise_data"]
+    # mycol3.insert_many(country_basic_data)
 
     return dictionary
 
