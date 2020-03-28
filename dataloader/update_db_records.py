@@ -4,14 +4,14 @@ import re
 from datetime import datetime
 
 import pandas as pd
+import numpy as np
 from starlette.responses import JSONResponse
 
 from .data_config import remote_urls, dataset_directory_path
 
 
 async def update_db(request):
-    update_cumulative_cases_record()
-    return JSONResponse({'message': 'Updated records in the database'}, status_code=200)
+    return update_cumulative_cases_record()
 
 
 def get_latest_extracted_dataset_directory():
@@ -48,5 +48,11 @@ def update_cumulative_cases_record():
     final_data_frame = pd.concat(mini_data_frame_list)
     final_data_frame.reset_index(drop=True, inplace=True)
     final_data_frame.fillna('', inplace=True)
+    logging.info('Created combined dataframe')
+    print(final_data_frame.info())
+    print(final_data_frame.head())
+    print(final_data_frame.transpose().head())
+    print('######################')
+    print(np.where(pd.isnull(final_data_frame)))
 
     return JSONResponse({'message': 'Read data from the latest directory: ' + extracted_dataset_directory}, status_code=200)
