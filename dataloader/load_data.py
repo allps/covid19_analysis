@@ -10,14 +10,18 @@ print("pymongo version:", pymongo.version)
 
 
 remote_urls = {
-    'john_hopkins_repo': 'https://github.com/CSSEGISandData/COVID-19/archive/master.zip'
+    'john_hopkins_repo': 'https://github.com/CSSEGISandData/COVID-19/archive/master.zip',
+    'daily_reports_relative_path': 'COVID-19-master' + os.sep + 'csse_covid_19_data' + os.sep + 'csse_covid_19_daily_reports '
 }
 dataset_directory_path = os.getcwd() + os.sep + "data" + os.sep
 
 
 def clear_all_temp_data(request):
-    shutil.rmtree(dataset_directory_path)
-    return PlainTextResponse('all cleared')
+    if os.path.isdir(dataset_directory_path):
+        shutil.rmtree(dataset_directory_path)
+        return JSONResponse({'message': dataset_directory_path + ' has been cleared.'}, status_code=200)
+    return JSONResponse({'message': dataset_directory_path + ' does not exist.'}, status_code=200)
+
 
 
 def refresh_data(request):
@@ -27,11 +31,11 @@ def refresh_data(request):
     mycol = mydb["visualizations"]
 
     # get data from url
-    # filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
-    # dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
-    # extracted_dir = extract_zipfile(dataset_zip_path)
-    t = get_combined_time_series_data_set(
-        r"C:\Users\91958\covid19_analysis\data\john_hopkins_repo_1585245624.2873893\COVID-19-master\csse_covid_19_data\csse_covid_19_daily_reports")
+    filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
+    dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
+    extracted_dir = extract_zipfile(dataset_zip_path)
+    daily_reports_directory_path = extracted_dir + os.sep + remote_urls['daily_reports_relative_path']
+    t = get_combined_time_series_data_set(daily_reports_directory_path)
 
     mycol.insert(t)
     # print(x.inserted_ids)
