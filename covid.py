@@ -57,9 +57,17 @@ async def perCountryMortality(request):
     mycol = mydb["visualizations"]
 
     for x in mycol.find({}, {"_id": 0, "countries": 1, "perCountryMortality": 1}):
-        print(x)
+        print("qwertyu")
 
     return JSONResponse(x)
+
+async def show_countries_table(request):
+    mydb = mongo_client["covid19"]
+    # mycol2 = mydb["countries_table"]
+    myresults = list(mydb["countries_table"].find({}, {"_id": 0}))
+    # print(myresults)
+
+    return JSONResponse(myresults)
 
 routes = [
     # Mount('/static', app=StaticFiles(directory='static'), name='static'),
@@ -71,6 +79,7 @@ routes = [
     Route('/v1/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
     Route('/v1/cases/total', endpoint=totalCasesCount, methods=["GET"]),
     Route('/v1/perCountry/mortality', endpoint=perCountryMortality, methods=['GET']),
+    Route('/v1/countriesTable', endpoint=show_countries_table, methods=['GET']),
 
     Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=refresh_data, methods=['GET'])
