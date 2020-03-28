@@ -26,9 +26,6 @@ def refresh_data(request):
     mydb = mongo_client["covid19"]
     mycol = mydb["visualizations"]
 
-    print(mongo_client.list_database_names())
-    print(mydb.list_collection_names())
-
     # get data from url
     # filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
     # dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
@@ -141,6 +138,20 @@ def get_combined_time_series_data_set(dataset_directory: str):
     countrywise_df.drop(countrywise_df.index[0], inplace=True)
     print(countrywise_df.head())
 
+    countrywise_df2 = final_data_frame.groupby(["Country_Region"]).agg(
+        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
+    countrywise_df2.drop(countrywise_df2.index[0], inplace=True)
+    countrywise_df2.rename(columns={"Country_Region": "Country/Region"}, inplace=True)
+    print("qwertyuioppppppppppppppppp")
+    print(countrywise_df2.info())
+    print(countrywise_df2.head())
+
+    countrywise_df3 = pd.concat([countrywise_df, countrywise_df2]).drop_duplicates().reset_index(drop=True)
+    print("zxcvbnm,")
+    print(countrywise_df3.info())
+    print(countrywise_df3.head())
+
     arr_recovered = datewise_df['Recovered'].to_numpy()
     arr_deaths = datewise_df['Deaths'].to_numpy()
     arr_confirmed = datewise_df['Confirmed'].to_numpy()
@@ -172,9 +183,9 @@ def get_combined_time_series_data_set(dataset_directory: str):
     total_recovered_cases = datewise_df["Recovered"].sum()
     total_deaths = datewise_df["Deaths"].sum()
 
-    countrywise_df["perCountryMortality"] = (countrywise_df["Deaths"] / countrywise_df["Confirmed"]) * 100
-    countrywise_plot_mortal = countrywise_df[countrywise_df["Confirmed"] > 50].sort_values(["perCountryMortality"],
-                                                                                           ascending=False).head(25)
+    countrywise_df3["perCountryMortality"] = (countrywise_df3["Deaths"] / countrywise_df3["Confirmed"]) * 100
+    countrywise_plot_mortal = countrywise_df3[countrywise_df3["Confirmed"] > 50].sort_values(["perCountryMortality"],
+                                                                                           ascending=False).head(383)
     arr_countries = countrywise_plot_mortal['Country/Region'].to_numpy()
     countries_list = arr_countries.tolist()
 
@@ -195,6 +206,12 @@ def get_combined_time_series_data_set(dataset_directory: str):
         "perCountryMortality": arr_perCountry_mortality_list
     }
 
-    # t = dictionary.to_dict(orient='records')
+    country_records = countrywise_df3.to_dict(orient='records')
+
+    mongo_client = MongoClient('mongodb://localhost:27017/')
+    mydb = mongo_client["covid19"]
+    mycol2 = mydb["countries_table"]
+    mycol2.insert_many(country_records)
+
     return dictionary
 
