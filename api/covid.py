@@ -5,14 +5,6 @@ from dataloader import refresh_data
 from config import mongo_db_url, database_name
 
 
-async def all_cases(request):
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.visualizations
-        x = collection.find_one({}, {"_id": 0, "json_xax": 1, "confirmed": 1, "recovered": 1, "death": 1})
-        return JSONResponse(x)
-
-
 async def total_cases_count(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
