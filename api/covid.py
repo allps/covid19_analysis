@@ -2,9 +2,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from pymongo import MongoClient
 from dataloader import refresh_data
-
-mongo_db_url = r'mongodb://localhost:27017/'
-database_name = r'covid19'
+from config import mongo_db_url, database_name
 
 
 async def all_cases(request):
@@ -23,11 +21,11 @@ async def total_cases_count(request):
         return JSONResponse(x)
 
 
-async def all_cases_cumulative(request):
+async def all_cases_cumulative_global(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.visualizations
-        x = collection.find_one({}, {"_id": 0, "json_xax": 1, "confirmed": 1, "recovered": 1, "death": 10})
+        x = collection.find_one({'viz_type': 'all_cases_cumulative_global'}, {"_id": 0, "json_xax": 1, "confirmed": 1, "recovered": 1, "death": 1})
         return JSONResponse(x)
 
 
