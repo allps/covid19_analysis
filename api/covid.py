@@ -9,7 +9,7 @@ async def total_cases_count(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.visualizations
-        x = collection.find_one({}, {"_id": 0, "totalNumberConfirmed": 1, "totalRecovered": 1, "totalDeaths": 1})
+        x = collection.find_one({'viz_type': 'total_cases_global'}, {"_id": 0})
         return JSONResponse(x)
 
 
@@ -17,7 +17,15 @@ async def all_cases_cumulative_global(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.visualizations
-        x = collection.find_one({'viz_type': 'all_cases_cumulative_global'}, {"_id": 0, "json_xax": 1, "confirmed": 1, "recovered": 1, "death": 1})
+        x = collection.find_one({'viz_type': 'all_cases_cumulative_global'}, {"_id": 0})
+        return JSONResponse(x)
+
+
+async def country_wise_mortality(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        x = collection.find_one({'viz_type': 'country_wise_mortality'}, {"_id": 0})
         return JSONResponse(x)
 
 

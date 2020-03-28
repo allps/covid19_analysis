@@ -12,7 +12,25 @@ from config import remote_urls, dataset_directory_path, database_name, mongo_db_
 
 
 async def update_db(request):
-    if update_cumulative_cases_record() == 0:
+    extracted_dataset_directory = get_latest_extracted_dataset_directory()
+    mini_data_frame_list = []
+
+    logging.info('Reading data from the latest directory: ' + extracted_dataset_directory)
+    for item in get_sorted_dataset_latest_file_list(extracted_dataset_directory):
+        mini_data_frame_list.append(
+            pre_process_data_frame_for_different_columns(
+                pd.read_csv(extracted_dataset_directory + os.sep + item), item))
+
+    final_data_frame = pd.concat(mini_data_frame_list)
+    final_data_frame.reset_index(drop=True, inplace=True)
+    final_data_frame.fillna('', inplace=True)
+    final_data_frame['Confirmed'].replace('', 0, inplace=True)
+    final_data_frame['Recovered'].replace('', 0, inplace=True)
+    final_data_frame['Deaths'].replace('', 0, inplace=True)
+
+    if update_all_cases_cumulative_global_record(final_data_frame) == 0 and \
+            update_total_cases_global_record(final_data_frame) == 0 and \
+            update_country_wise_mortality_rate(final_data_frame) == 0:
         return JSONResponse({'message': 'Updated database with latest data'}, status_code=200)
 
     return JSONResponse({'message': 'Could not up date database with latest data'}, status_code=500)
@@ -41,24 +59,33 @@ def get_sorted_dataset_latest_file_list(extracted_dataset_directory) -> list:
     return dataset_file_list
 
 
-def update_cumulative_cases_record() -> int:
-    extracted_dataset_directory = get_latest_extracted_dataset_directory()
-    mini_data_frame_list = []
-
-    logging.info('Reading data from the latest directory: ' + extracted_dataset_directory)
-    for item in get_sorted_dataset_latest_file_list(extracted_dataset_directory):
-        mini_data_frame_list.append(
-            pre_process_data_frame_for_different_columns(
-                pd.read_csv(extracted_dataset_directory + os.sep + item), item))
-
-    final_data_frame = pd.concat(mini_data_frame_list)
-    cumulative_cases_global = get_visualization_ready_dict(final_data_frame)
+def update_all_cases_cumulative_global_record(df: pd.DataFrame) -> int:
+    cumulative_cases_global = get_all_cases_cumulative_global_visualization_ready_dict(df)
 
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.visualizations
         collection.insert(cumulative_cases_global)
+    return 0
 
+
+def update_total_cases_global_record(df: pd.DataFrame) -> int:
+    cumulative_cases_global = get_total_cases_global_visualization_ready_dict(df)
+
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        collection.insert(cumulative_cases_global)
+    return 0
+
+
+def update_country_wise_mortality_rate(df: pd.DataFrame) -> int:
+    cumulative_cases_global = get_country_wise_mortality_rate_visualization_ready_dict(df)
+
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        collection.insert(cumulative_cases_global)
     return 0
 
 
@@ -90,17 +117,10 @@ def pre_process_data_frame_for_different_columns(df: pd.DataFrame, item) -> pd.D
     return df
 
 
-def get_visualization_ready_dict(df: pd.DataFrame) -> dict:
-    df.reset_index(drop=True, inplace=True)
-    df.fillna('', inplace=True)
-    df['Confirmed'].replace('', 0, inplace=True)
-    df['Recovered'].replace('', 0, inplace=True)
-    df['Deaths'].replace('', 0, inplace=True)
-
+def get_all_cases_cumulative_global_visualization_ready_dict(df: pd.DataFrame) -> dict:
     df["ObservationDate"] = pd.to_datetime(df["ObservationDate"])
     date_wise_df = df.groupby(["ObservationDate"]).agg(
-            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-
+        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
     ##########################All cases combined cumulative##########################
     arr_yax = date_wise_df['Confirmed'].to_numpy()
@@ -115,7 +135,7 @@ def get_visualization_ready_dict(df: pd.DataFrame) -> dict:
     recovered_list = arr_recovered.tolist()
     death_list = arr_deaths.tolist()
 
-    dictionary_cumulative = {
+    return {
         'viz_type': 'all_cases_cumulative_global',
         'json_xax': x_list,
         'confirmed': y_list,
@@ -123,16 +143,19 @@ def get_visualization_ready_dict(df: pd.DataFrame) -> dict:
         'death': death_list,
         'created_at': datetime.timestamp(datetime.now())
     }
-    ##########################All cases combined cumulative end##########################
 
-    ##########################All cases combined Total##########################
+
+def get_total_cases_global_visualization_ready_dict(df: pd.DataFrame) -> dict:
+    df["ObservationDate"] = pd.to_datetime(df["ObservationDate"])
+    date_wise_df = df.groupby(["ObservationDate"]).agg(
+        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
     # extract the information from the dataset
     total_countries_affected = len(df["Country_Region"].unique())
     total_confirmed_cases = date_wise_df["Confirmed"].iloc[-1]
     total_recovered_cases = date_wise_df["Recovered"].iloc[-1]
     total_deaths = date_wise_df["Deaths"].iloc[-1]
 
-    dictionary_total = {
+    return {
         'viz_type': 'total_cases_global',
         'totalCountries': total_countries_affected,
         'confirmed': total_confirmed_cases,
@@ -140,6 +163,24 @@ def get_visualization_ready_dict(df: pd.DataFrame) -> dict:
         'deaths': total_deaths,
         'created_at': datetime.timestamp(datetime.now())
     }
-    ##########################All cases combined Total Ends##########################
 
-    return dictionary_cumulative
+
+def get_country_wise_mortality_rate_visualization_ready_dict(df: pd.DataFrame) -> dict:
+    country_wise_df = df.groupby(["Country_Region"]).agg(
+        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
+    country_wise_df["Mortality"] = (country_wise_df["Deaths"] / country_wise_df["Confirmed"]) * 100
+
+    country_wise_plot_mortal = country_wise_df[country_wise_df["Confirmed"] > 50].sort_values(["Mortality"],
+                                                                                           ascending=False).head(25)
+    arr_yax = country_wise_plot_mortal['Country_Region'].to_numpy()
+    y_list = arr_yax.tolist()
+
+    arr_xax = country_wise_plot_mortal['Mortality'].to_numpy()
+    x_list = arr_xax.tolist()
+
+    return {
+        'viz_type': 'country_wise_mortality',
+        'json_xax': x_list,
+        'json_yax': y_list
+    }
