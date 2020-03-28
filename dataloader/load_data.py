@@ -257,8 +257,8 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     mongo_client = MongoClient('mongodb://localhost:27017/')
     mydb = mongo_client["covid19"]
-    mycol3 = mydb["country_wise_data"]
-    mycol3.insert_many(country_wise_data_to_be_thrown_into_db)
+    # mycol3 = mydb["country_wise_data"]
+    mydb["country_wise_data"].insert_many(country_wise_data_to_be_thrown_into_db)
 
     return dictionary
 
