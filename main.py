@@ -9,7 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from dataloader import refresh_data, clear_all_temp_data
+from dataloader import refresh_data, clear_all_temp_data, update_cumulative_cases_record
 from api import all_cases, total_cases_count
 
 
@@ -382,7 +382,8 @@ routes = [
 
 
     Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
-    Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET'])
+    Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),
+    Route('/system/refresh-database', endpoint=update_cumulative_cases_record(), methods=['GET'])
 
 ]
 
