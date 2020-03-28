@@ -10,7 +10,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from dataloader import refresh_data, clear_all_temp_data, update_db
-from api import all_cases, total_cases_count, country_data_found
+from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found
 
 
 async def totalCases(request):
@@ -368,10 +368,10 @@ routes = [
 
     ################# daywise Analysis (worldwide) #################
     Route('/cases/total', endpoint=total_cases_count, methods=["GET"]),
-    Route('/cases', endpoint=all_cases, methods=["GET"]),
+    Route('/cases', endpoint=all_cases_cumulative_global, methods=["GET"]),
     Route('/mortalityRate', endpoint=mortalityRate, methods=["GET"]),
     Route('/recoveryRate', endpoint=recoveryRate, methods=["GET"]),
-    Route('/perCountry/mortality', endpoint=perCountrymortality, methods=['GET']),
+    Route('/perCountry/mortality', endpoint=country_wise_mortality, methods=['GET']),
 
     ################ country wise Analysis ##############
 
