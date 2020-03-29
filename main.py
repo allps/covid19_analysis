@@ -9,7 +9,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from dataloader import refresh_data, clear_all_temp_data, update_db, get_all_cases_country_wise_visualizations
+from dataloader import refresh_data, clear_all_temp_data, update_db
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found
 
 
@@ -381,7 +381,7 @@ routes = [
     Route('/country/mortalityRate/{country}', endpoint=countryMortalityRate, methods=["GET", "POST"]),
     Route('/country/recoveryRate/{country}', endpoint=countryRecoveryRate, methods=["GET", "POST"]),
 
-    Route('/test', endpoint=get_all_cases_country_wise_visualizations, methods=["GET", "POST"]),
+    # Route('/test', endpoint=get_all_countries_per_day_dict, methods=["GET", "POST"]),
 
     Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),

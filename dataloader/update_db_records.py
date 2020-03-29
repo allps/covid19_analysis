@@ -32,7 +32,8 @@ async def update_db(request):
             update_total_cases_global_record(final_data_frame) == 0 and \
             update_country_wise_mortality_rate(final_data_frame) == 0 and \
             update_data_for_table(final_data_frame) == 0 and \
-            update_basic_data_for_countries(final_data_frame) == 0:
+            update_basic_data_for_countries(final_data_frame) == 0 and \
+            update_country_wise_per_day_data(final_data_frame) == 0:
         return JSONResponse({'message': 'Updated database with latest data'}, status_code=200)
 
     return JSONResponse({'message': 'Could not up date database with latest data'}, status_code=500)
@@ -59,6 +60,16 @@ def get_sorted_dataset_latest_file_list(extracted_dataset_directory) -> list:
 
     dataset_file_list.sort(key=lambda date: datetime.strptime(date.replace('.csv', ''), '%m-%d-%Y'))
     return dataset_file_list
+
+
+def update_country_wise_per_day_data(df):
+    countries_per_day_data = get_all_countries_per_day_dict(df)
+
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        collection.insert(countries_per_day_data)
+    return 0
 
 
 def update_data_for_table(df) -> int:
@@ -204,31 +215,43 @@ def get_all_cases_cumulative_global_visualization_ready_dict(df: pd.DataFrame) -
         'created_at': datetime.timestamp(datetime.now())
     }
 
-def get_all_cases_country_wise_visualizations(df: pd.DataFrame) -> dict:
-    print(df)
-    # df["ObservationDate"] = pd.to_datetime(df["ObservationDate"])
-    country_wise_df = df.groupby(["Country_Region"]).agg(
-        {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
-    print(country_wise_df)
-    return JSONResponse("qwertyu")
 
-    # temp_country_dict = {
-    #
-    #         'name': "countryName",
-    #         'json_xax': x_list,
-    #         'confirmed': y_list,
-    #         'recovered': recovered_list,
-    #         'death': death_list,
-    # }
-    #
-    # list_of_country_wise_dict = []
-    # list_of_country_wise_dict.append(temp_country_dict)
-    #
-    # return {
-    #         "viz_type": "country_wise_dict",
-    #         "data": list_of_country_wise_dict,
-    #         "created_at": datetime.timestamp(datetime.now())
-    # }
+def get_all_countries_per_day_dict(final_data_frame):
+    final_data_frame["ObservationDate"] = pd.to_datetime(final_data_frame["ObservationDate"])
+    final_data_frame["Country_Region"] = final_data_frame["Country_Region"].str.lstrip()
+    final_data_frame["Country_Region"] = final_data_frame["Country_Region"].str.replace(' ', '_')
+    final_data_frame['Country_Region'] = final_data_frame['Country_Region'].str.lower()
+
+    countries_list = final_data_frame['Country_Region'].tolist()
+
+    list_of_country_wise_dict = []
+
+    for country in countries_list:
+        country_new_data_frame = final_data_frame[final_data_frame["Country_Region"] == country]
+        datewise_country_new_data_frame = country_new_data_frame.groupby(["ObservationDate"]).agg(
+            {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
+
+        date_list = datewise_country_new_data_frame['ObservationDate'].to_numpy().tolist()
+        confirmed_list = datewise_country_new_data_frame['Confirmed'].to_numpy().tolist()
+        recovered_list = datewise_country_new_data_frame['Recovered'].to_numpy().tolist()
+        death_list = datewise_country_new_data_frame['Deaths'].to_numpy().tolist()
+
+        temp_country_dict = {
+                'name': country,
+                'json_xax': date_list,
+                'confirmed': confirmed_list,
+                'recovered': recovered_list,
+                'death': death_list,
+        }
+        list_of_country_wise_dict.append(temp_country_dict)
+
+    print(len(list_of_country_wise_dict))
+
+    return {
+            "viz_type": "country_wise_dict",
+            "data": list_of_country_wise_dict,
+            "created_at": datetime.timestamp(datetime.now())
+    }
 
 
 def get_total_cases_global_visualization_ready_dict(df: pd.DataFrame) -> dict:
