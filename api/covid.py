@@ -5,6 +5,7 @@ from dataloader import refresh_data
 from config import mongo_db_url, database_name
 import json
 
+
 async def total_cases_count(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
@@ -28,9 +29,10 @@ async def country_wise_mortality(request):
         x = collection.find_one({'viz_type': 'country_wise_mortality'}, {"_id": 0})
         return JSONResponse(x)
 
+
 async def country_data_found(request):
+    req = request.path_params['country']
     try:
-        req = request.path_params['country']
         print(req)
         with MongoClient(mongo_db_url) as client:
             db = client[database_name]
@@ -47,6 +49,14 @@ async def country_data_found(request):
 async def country_data_visualization(request):
 
     return JSONResponse("qwertyu")
+
+
+async def global_map_data(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        x = collection.find_one({'viz_type': 'map_global'}, {"_id": 0})
+        return JSONResponse(x)
 
 # async def mortalityRate(request):
 #     mydb = mongo_client["covid19"]

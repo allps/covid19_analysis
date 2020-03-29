@@ -7,7 +7,7 @@ from pymongo import MongoClient
 import pandas as pd
 import numpy as np
 from starlette.responses import JSONResponse
-
+from .mapdata_loader import update_map_data
 from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
 
 
@@ -32,6 +32,7 @@ async def update_db(request):
             update_total_cases_global_record(final_data_frame) == 0 and \
             update_country_wise_mortality_rate(final_data_frame) == 0 and \
             update_data_for_table(final_data_frame) == 0 and \
+            update_map_data(final_data_frame) == 0 and \
             update_basic_data_for_countries(final_data_frame) == 0:
         return JSONResponse({'message': 'Updated database with latest data'}, status_code=200)
 

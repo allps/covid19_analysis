@@ -10,7 +10,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from dataloader import refresh_data, clear_all_temp_data, update_db, get_all_cases_country_wise_visualizations
-from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found
+from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found, global_map_data
 
 
 async def totalCases(request):
@@ -385,7 +385,10 @@ routes = [
 
     Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),
-    Route('/system/refresh-database', endpoint=update_db, methods=['GET'])
+    Route('/system/refresh-database', endpoint=update_db, methods=['GET']),
+
+
+    Route('/map/global', endpoint=global_map_data, methods=['GET'])
 
 ]
 
