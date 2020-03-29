@@ -44,6 +44,10 @@ async def country_data_found(request):
         return JSONResponse({"country not found": req})
 
 
+async def country_data_visualization(request):
+
+    return JSONResponse("qwertyu")
+
 # async def mortalityRate(request):
 #     mydb = mongo_client["covid19"]
 #     mycol =
