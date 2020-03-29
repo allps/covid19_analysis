@@ -223,7 +223,7 @@ def get_all_countries_per_day_dict(final_data_frame):
     final_data_frame["Country_Region"] = final_data_frame["Country_Region"].str.replace(' ', '_')
     final_data_frame['Country_Region'] = final_data_frame['Country_Region'].str.lower()
 
-    countries_list = final_data_frame['Country_Region'].tolist()
+    countries_list = final_data_frame['Country_Region'].unique()
 
     list_of_country_wise_dict = []
 
