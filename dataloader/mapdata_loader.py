@@ -1,64 +1,59 @@
 import pandas as pd
 from datetime import datetime
 from pymongo import MongoClient
-from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
-import numpy as np
+from config import database_name, mongo_db_url, country_code_dict
+from .load_data import get_latest_time_series_file_dict
 
 
-def update_map_data(df: pd.DataFrame) -> int:
-    collection_name = 'visualizations'
-    df["ObservationDate"] = pd.to_datetime(df["ObservationDate"])
-    df['Lat'].replace('', 0, inplace=True)
-    df['Long'].replace('', 0, inplace=True)
+def update_map_data() -> int:
 
-    df_without_lat_long = df.head(2700)
-    t = df_without_lat_long.groupby(["Country_Region", 'Province_State']).agg(
-        {"Confirmed": np.sum, "Recovered": np.sum, "Deaths": np.sum}).reset_index()
-    t.to_csv('/home/schartz/without_lat_long.csv')
+    file_list = get_latest_time_series_file_dict()
 
+    country_wise_cases_dfs = {
+        'confirmed': pd.read_csv(file_list['confirmed']),
+        'recovered': pd.read_csv(file_list['recovered']),
+        'deaths': pd.read_csv(file_list['deaths'])
+    }
 
+    country_wise_cases_dicts = {}
 
-    print(df_without_lat_long.head(1))
-    print(df.tail(1))
+    for key, df in country_wise_cases_dfs.items():
+        tmp_df = df.filter(['Country/Region'], axis=1)
+        tmp_df[key] = df.iloc[:, -1]
+        tmp_df = tmp_df.groupby(["Country/Region"]).agg({key: 'sum'}).reset_index()
 
-    location_grouped_df = df.groupby(["Country_Region", 'Province_State']).agg(
-        {"Confirmed": np.sum, "Recovered": np.sum, "Deaths": np.sum}).reset_index()
+        for index, row in tmp_df.iterrows():
+            if row['Country/Region'] == 'Taiwan*':
+                tmp_df.at[index, 'Country/Region'] = 'Taiwan'
+            if row['Country/Region'] == 'US':
+                tmp_df.at[index, 'Country/Region'] = 'United States'
+            if row['Country/Region'] == 'Burma':
+                tmp_df.at[index, 'Country/Region'] = 'Myanmar'
+            if row['Country/Region'] == 'Congo (Brazzaville)':
+                tmp_df.at[index, 'Country/Region'] = 'Republic of Congo'
+            if row['Country/Region'] == 'Congo (Kinshasa)':
+                tmp_df.at[index, 'Country/Region'] = 'Democratic Republic of the Congo'
+            if row['Country/Region'] == 'Czechia':
+                tmp_df.at[index, 'Country/Region'] = 'Czech Republic'
+            if row['Country/Region'] == 'Eswatini':
+                tmp_df.at[index, 'Country/Region'] = 'Swaziland'
+            if row['Country/Region'] == 'West Bank and Gaza':
+                tmp_df.at[index, 'Country/Region'] = 'Palestine'
 
-    location_grouped_df.to_csv('/home/schartz/g1.csv')
+            # tmp_df.to_csv('/home/schartz/' + key + '1.csv')
 
-    map_data_df = df[
-        ['Province_State', 'Country_Region', 'Confirmed', 'Recovered', 'Deaths', 'Lat', 'Long']
-    ].copy()
+            country_code = country_code_dict[tmp_df.at[index, 'Country/Region']]
+            tmp_df.at[index, 'country_code'] = country_code
 
-    list_confirmed = []
-    list_recovered = []
-    list_deaths = []
-    list_geo_coord = []
-    for row in df.itertuples(index=True, name='Pandas'):
-        list_confirmed.append({
-            'name': getattr(row, "Province_State"),
-            'value': getattr(row, 'Confirmed')
-        })
+        tmp_df.rename(columns={'Country/Region': 'Country_Region'}, inplace=True)
+        country_wise_cases_dicts[key] = tmp_df.to_dict(orient='records')
 
-        list_recovered.append({
-            'name': getattr(row, "Province_State"),
-            'value': getattr(row, 'Recovered')
-        })
-        list_deaths.append({
-            'name': getattr(row, "Province_State"),
-            'value': getattr(row, 'Deaths')
-        })
-
-        list_geo_coord.append({
-            getattr(row, "Province_State").replace('.', ''): [getattr(row, "Lat"), getattr(row, 'Long')]
-        })
-
-    return update_records_in_database(collection_name, {
+    return update_records_in_database('visualizations', {
         'viz_type': 'map_global',
-        'geo_cord_list': list_geo_coord,
-        'confirmed_list': list_confirmed,
-        'recovered_list': list_recovered,
-        'death_list': list_deaths,
+        'confirmed_list': country_wise_cases_dicts['confirmed'],
+        'recovered_list': country_wise_cases_dicts['recovered'],
+        'deaths_list': country_wise_cases_dicts['deaths'],
+
         'created_at': datetime.timestamp(datetime.now())
     })
 
@@ -67,7 +62,8 @@ def update_records_in_database(collection_name: str, dict_to_update: dict) -> in
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db[collection_name]
+
+        collection.remove({'viz_type': 'map_global'})
+
         collection.insert(dict_to_update)
     return 0
-
-

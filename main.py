@@ -387,9 +387,9 @@ routes = [
 
     # Route('/test', endpoint=get_all_countries_per_day_dict, methods=["GET", "POST"]),
 
-    Route('/system/refresh_data', endpoint=refresh_data, methods=['GET']),
+    Route('/system/refresh-data/{file_type}', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),
-    Route('/system/refresh-database', endpoint=update_db, methods=['GET']),
+    Route('/system/refresh-database/{file_type}', endpoint=update_db, methods=['GET']),
 
 
     Route('/map/global', endpoint=global_map_data, methods=['GET'])
@@ -397,7 +397,7 @@ routes = [
 ]
 
 middleware = [
-    Middleware(CORSMiddleware, allow_origins=['*'])
+        Middleware(CORSMiddleware, allow_origins=['*'])
 ]
 
 app = Starlette(debug=True, routes=routes, middleware=middleware)

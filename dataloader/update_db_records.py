@@ -1,54 +1,75 @@
 import logging
 import os
 import re
+import time
 from datetime import datetime
 from pymongo import MongoClient
 
 import pandas as pd
-import numpy as np
 from starlette.responses import JSONResponse
 from .mapdata_loader import update_map_data
 from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
+from .load_data import get_latest_time_series_file_dict
 
 
 async def update_db(request):
-    extracted_dataset_directory = get_latest_extracted_dataset_directory()
-    mini_data_frame_list = []
+    if request.path_params['file_type'] not in ['time-series', 'combined']:
+        message = request.path_params['file_type'] + \
+                  ' does not match any known operations. Available operations are \'time-series\' and \'combined\''
+        return JSONResponse({'message': message}, status_code=500)
 
-    logging.info('Reading data from the latest directory: ' + extracted_dataset_directory)
-    for item in get_sorted_dataset_latest_file_list(extracted_dataset_directory):
-        mini_data_frame_list.append(
-            pre_process_data_frame_for_different_columns(
-                pd.read_csv(extracted_dataset_directory + os.sep + item), item))
+    if request.path_params['file_type'] == 'time-series':
+        if update_all_cases_cumulative_global_record(pd.DataFrame(), df_type='time_series') == 0 and \
+                update_total_cases_global_record(pd.DataFrame(), df_type='time_series') == 0 and \
+                update_country_wise_mortality_rate(pd.DataFrame(), df_type='time_series') == 0 and \
+                update_data_for_table(pd.DataFrame(), df_type='time_series') == 0 and \
+                update_map_data() == 0 and \
+                update_basic_data_for_countries(pd.DataFrame(), df_type='time_series') == 0 and \
+                update_country_wise_per_day_data(pd.DataFrame(), df_type='time_series') == 0:
+            return JSONResponse({'message': 'Updated database with latest time series data'}, status_code=200)
+        return JSONResponse({'message': 'Could not up date database with latest data'}, status_code=500)
 
-    final_data_frame = pd.concat(mini_data_frame_list)
-    final_data_frame.reset_index(drop=True, inplace=True)
-    final_data_frame.fillna('', inplace=True)
-    final_data_frame['Confirmed'].replace('', 0, inplace=True)
-    final_data_frame['Recovered'].replace('', 0, inplace=True)
-    final_data_frame['Deaths'].replace('', 0, inplace=True)
+    else:
+        extracted_dataset_directory = get_latest_extracted_dataset_directory()
+        if extracted_dataset_directory != 'na':
+            mini_data_frame_list = []
+            logging.info('Reading data from the latest directory: ' + extracted_dataset_directory)
+            for item in get_sorted_dataset_latest_file_list(extracted_dataset_directory):
+                mini_data_frame_list.append(
+                    pre_process_data_frame_for_different_columns(
+                        pd.read_csv(extracted_dataset_directory + os.sep + item), item))
 
-    if update_all_cases_cumulative_global_record(final_data_frame) == 0 and \
-            update_total_cases_global_record(final_data_frame) == 0 and \
-            update_country_wise_mortality_rate(final_data_frame) == 0 and \
-            update_data_for_table(final_data_frame) == 0 and \
-            update_map_data(final_data_frame) == 0 and \
-            update_basic_data_for_countries(final_data_frame) == 0 and \
-            update_country_wise_per_day_data(final_data_frame) == 0:
-        return JSONResponse({'message': 'Updated database with latest data'}, status_code=200)
+            final_data_frame = pd.concat(mini_data_frame_list)
+            final_data_frame.reset_index(drop=True, inplace=True)
+            final_data_frame.fillna('', inplace=True)
+            final_data_frame['Confirmed'].replace('', 0, inplace=True)
+            final_data_frame['Recovered'].replace('', 0, inplace=True)
+            final_data_frame['Deaths'].replace('', 0, inplace=True)
 
-    return JSONResponse({'message': 'Could not up date database with latest data'}, status_code=500)
+            if update_all_cases_cumulative_global_record(final_data_frame, df_type='combined') == 0 and \
+                    update_total_cases_global_record(final_data_frame, df_type='combined') == 0 and \
+                    update_country_wise_mortality_rate(final_data_frame, df_type='combined') == 0 and \
+                    update_data_for_table(final_data_frame, df_type='combined') == 0 and \
+                    update_map_data() == 0 and \
+                    update_basic_data_for_countries(final_data_frame, df_type='combined') == 0 and \
+                    update_country_wise_per_day_data(final_data_frame, df_type='combined') == 0:
+                return JSONResponse({'message': 'Updated database with latest data'}, status_code=200)
+            return JSONResponse({'message': 'Could not update database with latest data'}, status_code=500)
+        else:
+            return JSONResponse({'message': 'Could not find an extracted dataset'}, status_code=500)
 
 
-def get_latest_extracted_dataset_directory():
+def get_latest_extracted_dataset_directory() -> str:
     zip_file_list = []
     filename_regex = r'([a-zA-Z0-9\s_\\.\-\(\):])+(.zip)$'
     for item in os.listdir(dataset_directory_path):
         if re.match(filename_regex, item):
             zip_file_list.append(item)
 
-    return dataset_directory_path + zip_file_list[-1].replace('zip', '') + os.sep + remote_urls[
-        'daily_reports_relative_path']
+    if len(zip_file_list) > 0:
+        return dataset_directory_path + zip_file_list[-1].replace('zip', '') + os.sep + remote_urls[
+            'daily_reports_relative_path']
+    return 'na'
 
 
 def get_sorted_dataset_latest_file_list(extracted_dataset_directory) -> list:
@@ -63,17 +84,49 @@ def get_sorted_dataset_latest_file_list(extracted_dataset_directory) -> list:
     return dataset_file_list
 
 
-def update_country_wise_per_day_data(df):
-    countries_per_day_data = get_all_countries_per_day_dict(df)
+def update_country_wise_per_day_data(df: pd.DataFrame, df_type: str):
+    if df_type == 'combined':
+        countries_per_day_data = get_all_countries_per_day_dict(df)
+        return update_records_in_database('visualizations', countries_per_day_data, countries_per_day_data['viz_type'])
+    else:
+        file_list = get_latest_time_series_file_dict()
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.visualizations
-        collection.insert(countries_per_day_data)
-    return 0
+        time_series_dfs = {
+            'confirmed': pd.read_csv(file_list['confirmed']),
+            'recovered': pd.read_csv(file_list['recovered']),
+            'deaths': pd.read_csv(file_list['deaths'])
+        }
+
+        result = 1
+
+        for key, df in time_series_dfs.items():
+            date_list = df.columns.values.tolist()
+            del date_list[0:4]
+            df.drop(['Province/State', 'Lat', 'Long'], axis=1, inplace=True)
+            df = df.groupby(["Country/Region"]).agg(
+                sum).reset_index()
+            df_as_list = df.to_numpy().tolist()
+            list_of_country_wise_dicts = []
+            for individual_country_list in df_as_list:
+                list_of_country_wise_dicts.append({
+                    'country': individual_country_list[0],
+                    key: individual_country_list[1:],
+                    'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y") for date_string in date_list]
+                })
+
+            dict_to_save_in_mongo = {
+                'viz_type': 'time_series_country_wise_' + key,
+                'data': list_of_country_wise_dicts,
+                'created_at': str(int(round(time.time() * 1000)))
+            }
+
+            result = update_records_in_database('visualizations', dict_to_save_in_mongo, dict_to_save_in_mongo['viz_type'])
+        return result
 
 
-def update_data_for_table(df) -> int:
+def update_data_for_table(df: pd.DataFrame, df_type: str) -> int:
+    if df_type == 'time_series':
+        return 0
     countries_table_data = get_all_countries_table_data_ready_dict(df)
 
     with MongoClient(mongo_db_url) as client:
@@ -83,7 +136,9 @@ def update_data_for_table(df) -> int:
     return 0
 
 
-def update_basic_data_for_countries(df) -> int:
+def update_basic_data_for_countries(df: pd.DataFrame, df_type: str) -> int:
+    if df_type == 'time_series':
+        return 0
     countries_basic_data = get_all_countries_basic_data(df)
 
     with MongoClient(mongo_db_url) as client:
@@ -93,17 +148,44 @@ def update_basic_data_for_countries(df) -> int:
     return 0
 
 
-def update_all_cases_cumulative_global_record(df: pd.DataFrame) -> int:
-    cumulative_cases_global = get_all_cases_cumulative_global_visualization_ready_dict(df)
+def update_all_cases_cumulative_global_record(df: pd.DataFrame, df_type: str) -> int:
+    if df_type == 'combined':
+        cumulative_cases_global = get_all_cases_cumulative_global_visualization_ready_dict(df)
+        return update_records_in_database('visualizations', cumulative_cases_global, cumulative_cases_global['viz_type'])
+    else:
+        file_list = get_latest_time_series_file_dict()
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.visualizations
-        collection.insert(cumulative_cases_global)
-    return 0
+        time_series_dfs = {
+            'confirmed': pd.read_csv(file_list['confirmed']),
+            'recovered': pd.read_csv(file_list['recovered']),
+            'deaths': pd.read_csv(file_list['deaths'])
+        }
+        cases_list = {}
+        dates_list = []
+        for key, df in time_series_dfs.items():
+            d = df.columns.values.tolist()
+            del d[0:4]
+            dates_list = [(datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y")).timestamp() for date_string in d]
+
+            df.drop(['Country/Region', 'Province/State', 'Lat', 'Long'], axis=1, inplace=True)
+            cases_list[key] = df.sum(axis=0).tolist()
+
+        dict_to_save_in_mongo = {
+            'viz_type': 'all_cases_cumulative_global',
+            'dates': dates_list,
+            'confirmed': cases_list['confirmed'],
+            'recovered': cases_list['recovered'],
+            'deaths': cases_list['deaths'],
+            'created_at': datetime.timestamp(datetime.now())
+        }
+
+        return update_records_in_database('visualizations', dict_to_save_in_mongo, dict_to_save_in_mongo['viz_type'])
 
 
-def update_total_cases_global_record(df: pd.DataFrame) -> int:
+
+def update_total_cases_global_record(df: pd.DataFrame, df_type: str) -> int:
+    if df_type == 'time_series':
+        return 0
     cumulative_cases_global = get_total_cases_global_visualization_ready_dict(df)
 
     with MongoClient(mongo_db_url) as client:
@@ -113,7 +195,9 @@ def update_total_cases_global_record(df: pd.DataFrame) -> int:
     return 0
 
 
-def update_country_wise_mortality_rate(df: pd.DataFrame) -> int:
+def update_country_wise_mortality_rate(df: pd.DataFrame, df_type: str) -> int:
+    if df_type == 'time_series':
+        return 0
     cumulative_cases_global = get_country_wise_mortality_rate_visualization_ready_dict(df)
 
     with MongoClient(mongo_db_url) as client:
@@ -152,7 +236,6 @@ def pre_process_data_frame_for_different_columns(df: pd.DataFrame, item) -> pd.D
 
 
 def get_all_countries_basic_data(df):
-
     countrywise_df = df.groupby(["Country_Region"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
     countrywise_df["Country_Region"] = countrywise_df["Country_Region"].str.replace(' ', '')
@@ -238,20 +321,20 @@ def get_all_countries_per_day_dict(final_data_frame):
         death_list = datewise_country_new_data_frame['Deaths'].to_numpy().tolist()
 
         temp_country_dict = {
-                'name': country,
-                'json_xax': date_list,
-                'confirmed': confirmed_list,
-                'recovered': recovered_list,
-                'death': death_list,
+            'name': country,
+            'json_xax': date_list,
+            'confirmed': confirmed_list,
+            'recovered': recovered_list,
+            'death': death_list,
         }
         list_of_country_wise_dict.append(temp_country_dict)
 
     print(len(list_of_country_wise_dict))
 
     return {
-            "viz_type": "country_wise_dict",
-            "data": list_of_country_wise_dict,
-            "created_at": datetime.timestamp(datetime.now())
+        "viz_type": "country_wise_dict",
+        "data": list_of_country_wise_dict,
+        "created_at": datetime.timestamp(datetime.now())
     }
 
 
@@ -282,7 +365,7 @@ def get_country_wise_mortality_rate_visualization_ready_dict(df: pd.DataFrame) -
     country_wise_df["Mortality"] = (country_wise_df["Deaths"] / country_wise_df["Confirmed"]) * 100
 
     country_wise_plot_mortal = country_wise_df[country_wise_df["Confirmed"] > 50].sort_values(["Mortality"],
-                                                                                           ascending=False).head(25)
+                                                                                              ascending=False).head(25)
     arr_yax = country_wise_plot_mortal['Country_Region'].to_numpy()
     y_list = arr_yax.tolist()
 
@@ -294,3 +377,14 @@ def get_country_wise_mortality_rate_visualization_ready_dict(df: pd.DataFrame) -
         'json_xax': x_list,
         'json_yax': y_list
     }
+
+
+def update_records_in_database(collection_name: str, dict_to_update: dict, viz_type: str) -> int:
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db[collection_name]
+
+        collection.remove({'viz_type': viz_type})
+
+        collection.insert(dict_to_update)
+    return 0

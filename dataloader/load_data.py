@@ -1,19 +1,10 @@
-from starlette.responses import PlainTextResponse, JSONResponse
+from starlette.responses import JSONResponse
 from datetime import datetime
 import pandas as pd
-import pymongo
-import requests, os, time, zipfile, shutil, logging, re, json
+import requests, os, time, zipfile, shutil, logging, re
+from config import remote_urls, dataset_directory_path
 
 from pymongo import MongoClient
-print("pymongo version:", pymongo.version)
-
-
-
-remote_urls = {
-    'john_hopkins_repo': 'https://github.com/CSSEGISandData/COVID-19/archive/master.zip',
-    'daily_reports_relative_path': 'COVID-19-master' + os.sep + 'csse_covid_19_data' + os.sep + 'csse_covid_19_daily_reports'
-}
-dataset_directory_path = os.getcwd() + os.sep + "data" + os.sep
 
 
 def clear_all_temp_data(request):
@@ -23,50 +14,62 @@ def clear_all_temp_data(request):
     return JSONResponse({'message': dataset_directory_path + ' does not exist.'}, status_code=200)
 
 
-
 def refresh_data(request):
-    mongo_client = MongoClient('mongodb://localhost:27017/')
+    print(request.path_params['file_type'])
 
-    mydb = mongo_client["covid19"]
-    mycol = mydb["visualizations"]
+    if request.path_params['file_type'] == 'zip':
+        filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
+        dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
+        return JSONResponse({'message': extract_zipfile(dataset_zip_path)}, status_code=200)
 
-    # get data from url
-    filename = 'john_hopkins_repo_' + str(time.time()) + '.zip'
-    dataset_zip_path = fetch_file_from_url(remote_urls['john_hopkins_repo'], filename)
-    extracted_dir = extract_zipfile(dataset_zip_path)
-    daily_reports_directory_path = extracted_dir + os.sep + remote_urls['daily_reports_relative_path']
-    t = get_combined_time_series_data_set(daily_reports_directory_path)
+    if request.path_params['file_type'] == 'ts':
+        this_moment_in_time = 'time_series' + os.sep + str(time.time()).split('.')[0]
+        time_series_file_list = {
+            'confirmed': fetch_file_from_url(remote_urls['confirmed_time_series'],
+                                             'time_series_confirmed' + '.csv',
+                                             directory_to_save=dataset_directory_path + this_moment_in_time + os.sep),
+            'recovered': fetch_file_from_url(remote_urls['recovered_time_series'],
+                                             'time_series_recovered' + '.csv',
+                                             directory_to_save=dataset_directory_path + this_moment_in_time + os.sep),
+            'deaths': fetch_file_from_url(remote_urls['deaths_time_series'],
+                                          'time_series_deaths' + '.csv',
+                                          directory_to_save=dataset_directory_path + this_moment_in_time + os.sep)
+        }
 
-    mycol.insert(t)
-    # print(x.inserted_ids)
-    return JSONResponse("qwertyu")
+        return JSONResponse(time_series_file_list, status_code=200)
+
+    message = request.path_params['file_type'] + ' does not match any known operation types. Try \'zip\' or \'ts\''
+    return JSONResponse({'message': message}, status_code=422)
 
 
-def fetch_file_from_url(remote_url: str, filename: str, method: str = 'GET') -> str:
+def fetch_file_from_url(remote_url: str, filename: str, method: str = 'GET', directory_to_save: str = '') -> str:
     """
     Fetches a file from remote URL.
     Returns the absolute path of downloaded file OR throws an exception.
+    :param directory_to_save:
     :param remote_url: str, url of the file to be fetched
     :param filename: str, file name of the remote file with which it is supposed to be saved
     :param method: str, HTTP request type. Defaults to GET
     :return: str, absolute path of the downloaded file on disk
     """
+    if directory_to_save == '':
+        directory_to_save = dataset_directory_path
 
     logging.info('Begin download of ' + remote_url)
 
-    if not os.path.isdir(dataset_directory_path):
-        os.makedirs(dataset_directory_path, exist_ok=True)
+    if not os.path.isdir(directory_to_save):
+        os.makedirs(directory_to_save, exist_ok=True)
 
     # do not download in all at once. Stream instead.
     with requests.get(remote_url, stream=True) as resp:
-        with open(dataset_directory_path + filename, 'wb') as f:
+        with open(directory_to_save + filename, 'wb') as f:
             # Do not overflow the RAM. Download the stream in chunks of 1MB
             for chunk in resp.iter_content(1000000):
                 f.write(chunk)
 
     f.close()
-    logging.info('Downloaded ' + remote_url + ' to ' + dataset_directory_path + filename)
-    return dataset_directory_path + filename
+    logging.info('Downloaded ' + remote_url + ' to ' + directory_to_save + filename)
+    return directory_to_save + filename
 
 
 def extract_zipfile(filepath: str, extract_directory: str = "") -> str:
@@ -92,6 +95,20 @@ def extract_zipfile(filepath: str, extract_directory: str = "") -> str:
     return extract_directory
 
 
+def get_latest_time_series_file_dict() -> dict:
+    file_list = []
+    for item in os.listdir(dataset_directory_path + 'time_series'):
+        file_list.append(item)
+
+    return {
+        'confirmed': dataset_directory_path + 'time_series' + os.sep + file_list[
+            -1] + os.sep + 'time_series_confirmed.csv',
+        'recovered': dataset_directory_path + 'time_series' + os.sep + file_list[
+            -1] + os.sep + 'time_series_recovered.csv',
+        'deaths': dataset_directory_path + 'time_series' + os.sep + file_list[-1] + os.sep + 'time_series_deaths.csv'
+    }
+
+
 def get_combined_time_series_data_set(dataset_directory: str):
     """
     Returns a row wise dictionary of all dataset files combined from
@@ -115,56 +132,33 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     final_data_frame = pd.concat(mini_data_frame_list)
     final_data_frame.reset_index(drop=True, inplace=True)
-    # print(final_data_frame.info())
-    # print('#################################################################')
-    # print(final_data_frame.head())
-    # print('#################################################################')
-    # print(final_data_frame.tail())
     final_data_frame.fillna('', inplace=True)
-    # print(final_data_frame.info())
 
     final_data_frame["Confirmed"] = pd.to_numeric(final_data_frame['Confirmed'], errors='coerce')
     final_data_frame["Recovered"] = pd.to_numeric(final_data_frame['Recovered'], errors='coerce')
     final_data_frame["Deaths"] = pd.to_numeric(final_data_frame['Deaths'], errors='coerce')
 
-    # print(final_data_frame.info())
-
     final_data_frame["Last Update"] = pd.to_datetime(final_data_frame["Last Update"])
     datewise_df = final_data_frame.groupby(["Last Update"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
-
-
     countrywise_df = final_data_frame.groupby(["Country/Region"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
-    # print(countrywise_df.info())
-
     countrywise_df.drop(countrywise_df.index[0], inplace=True)
-    # print(countrywise_df.head())
 
     countrywise_df2 = final_data_frame.groupby(["Country_Region"]).agg(
         {"Confirmed": 'sum', "Recovered": 'sum', "Deaths": 'sum'}).reset_index()
 
     countrywise_df2.drop(countrywise_df2.index[0], inplace=True)
     countrywise_df2.rename(columns={"Country_Region": "Country/Region"}, inplace=True)
-    # print("qwertyuioppppppppppppppppp")
-    # print(countrywise_df2.info())
-    # print(countrywise_df2.head())
-
     countrywise_df3 = pd.concat([countrywise_df, countrywise_df2]).drop_duplicates().reset_index(drop=True)
-    # print("zxcvbnm,")
     countrywise_df3["perCountryMortality"] = (countrywise_df3["Deaths"] / countrywise_df3["Confirmed"]) * 100
 
     countrywise_df3["Country/Region"] = countrywise_df3["Country/Region"].str.replace(' ', '')
 
     countrywise_df3.drop_duplicates(subset="Country/Region", keep="last", inplace=True)
-
-    # print(countrywise_df3.info())
-    # print(countrywise_df3.head())
-
     countrywise_df3['Country/Region'] = countrywise_df3['Country/Region'].str.lower()
-    # print(countrywise_df3.head())
 
     arr_recovered = datewise_df['Recovered'].to_numpy()
     arr_deaths = datewise_df['Deaths'].to_numpy()
@@ -176,16 +170,10 @@ def get_combined_time_series_data_set(dataset_directory: str):
     confirmed_list = arr_confirmed.tolist()
     x_list = arr_xax.tolist()
     datewise_df.fillna(0, inplace=True)
-    # print('###############################################3')
-    # print(datewise_df.isnull().values.any())
-    # print('###############################################3')
     datewise_df["Mortality"] = (datewise_df["Deaths"] / datewise_df["Confirmed"]) * 100
     datewise_df["Recovery"] = (datewise_df["Recovered"] / datewise_df["Confirmed"]) * 100
 
     datewise_df.fillna(0, inplace=True)
-    # print('###############################################3')
-    # print(datewise_df.isnull().values.any())
-    # print('###############################################4')
 
     arr_mortality = datewise_df['Mortality'].to_numpy()
     mortality_list = arr_mortality.tolist()
@@ -198,7 +186,7 @@ def get_combined_time_series_data_set(dataset_directory: str):
     total_deaths = datewise_df["Deaths"].sum()
 
     countrywise_plot_mortal = countrywise_df3[countrywise_df3["Confirmed"] > 50].sort_values(["perCountryMortality"],
-                                                                                           ascending=False).head(225)
+                                                                                             ascending=False).head(225)
 
     arr_countries = countrywise_plot_mortal['Country/Region'].to_numpy()
     countries_list = arr_countries.tolist()
@@ -230,15 +218,11 @@ def get_combined_time_series_data_set(dataset_directory: str):
 
     # for countryWise data (saved basic data of each country)--------
 
-    # print(final_data_frame.tail())
-    # print(countrywise_df3.head())
-
     dateTimeObj = datetime.now()
     print(dateTimeObj)
     timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
 
     print('Current Timestamp : ', timestampStr)
-
 
     country_wise_data_to_be_thrown_into_db = []
     for row_number in countrywise_df3.index:
@@ -260,4 +244,3 @@ def get_combined_time_series_data_set(dataset_directory: str):
     mydb["country_wise_data"].insert_many(country_wise_data_to_be_thrown_into_db)
 
     return dictionary
-
