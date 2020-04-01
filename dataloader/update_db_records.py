@@ -127,15 +127,59 @@ def update_country_wise_per_day_data(df: pd.DataFrame, df_type: str):
 
 
 def update_data_for_table(df: pd.DataFrame, df_type: str) -> int:
-    if df_type == 'time_series':
-        return 0
-    countries_table_data = get_all_countries_table_data_ready_dict(df)
+    if df_type == 'combined':
+        countries_table_data = get_all_countries_table_data_ready_dict(df)
+        return update_records_in_database('visualizations', countries_table_data,
+                                          countries_table_data['viz_type'])
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.countries_table
-        collection.insert(countries_table_data)
-    return 0
+    else:
+        file_list = get_latest_time_series_file_dict()
+
+        time_series_dfs = {
+            'confirmed': pd.read_csv(file_list['confirmed']),
+            'recovered': pd.read_csv(file_list['recovered']),
+            'deaths': pd.read_csv(file_list['deaths'])
+        }
+        dict_to_save_in_mongo = {
+            'viz_type': 'country_wise_table_data',
+            'created_at': datetime.timestamp(datetime.now())
+        }
+        master_list = []
+        for key, df in time_series_dfs.items():
+
+            # because kingdom of Denmark is kingdom of denmark + greenland
+            index_location = df.loc[df['Province/State'] == 'Greenland'].index
+            df.iloc[index_location[0], 1] = 'Greenland'
+
+            df.drop(['Province/State', 'Lat', 'Long'], axis=1, inplace=True)
+            df = df.groupby(["Country/Region"]).agg(
+                sum).reset_index()
+            df_as_list = df.to_numpy().tolist()
+            list_of_case_count_list = []
+            for individual_country_list in df_as_list:
+                list_of_case_count_list.append({
+                    'country': individual_country_list[0],
+                    key: individual_country_list[-1]
+                })
+
+            master_list.append(list_of_case_count_list)
+
+        final_list = []
+
+        for i in range(len(master_list[0])):
+            if master_list[0][i]['confirmed'] > 0:
+                final_list.append({
+                    'country': master_list[0][i]['country'],
+                    'confirmed': master_list[0][i]['confirmed'],
+                    'recovered': master_list[1][i]['recovered'],
+                    'deaths': master_list[2][i]['deaths'],
+                    'mortality_rate': (master_list[2][i]['deaths']) / (master_list[0][i]['confirmed']),
+                    'recovery_rate': (master_list[1][i]['recovered']) / (master_list[0][i]['confirmed']),
+                })
+
+        dict_to_save_in_mongo['data'] = final_list
+        return update_records_in_database('visualizations', dict_to_save_in_mongo,
+                                          dict_to_save_in_mongo['viz_type'])
 
 
 def update_basic_data_for_countries(df: pd.DataFrame, df_type: str) -> int:
@@ -213,15 +257,51 @@ def update_total_cases_global_record(df: pd.DataFrame, df_type: str) -> int:
 
 
 def update_country_wise_mortality_rate(df: pd.DataFrame, df_type: str) -> int:
-    if df_type == 'time_series':
-        return 0
-    cumulative_cases_global = get_country_wise_mortality_rate_visualization_ready_dict(df)
+    if df_type == 'combined':
+        mortality_dict = get_country_wise_mortality_rate_visualization_ready_dict(df)
+        return update_records_in_database('visualizations', mortality_dict,
+                                          mortality_dict['viz_type'])
+    else:
+        file_list = get_latest_time_series_file_dict()
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.visualizations
-        collection.insert(cumulative_cases_global)
-    return 0
+        time_series_dfs = {
+            'confirmed': pd.read_csv(file_list['confirmed']),
+            'recovered': pd.read_csv(file_list['recovered']),
+            'deaths': pd.read_csv(file_list['deaths'])
+        }
+
+        tmp = {
+            'confirmed': pd.DataFrame(),
+            'recovered': pd.DataFrame(),
+            'deaths': pd.DataFrame()
+        }
+        for key, df in time_series_dfs.items():
+            # because kingdom of Denmark is kingdom of denmark + greenland
+            index_location = df.loc[df['Province/State'] == 'Greenland'].index
+            df.iloc[index_location[0], 1] = 'Greenland'
+
+            df.drop(['Province/State', 'Lat', 'Long'], axis=1, inplace=True)
+            k = df.groupby(["Country/Region"]).agg(
+                sum).reset_index()
+            tmp[key] = k
+
+
+        final_df = pd.DataFrame()
+        final_df['country'] = tmp['confirmed']['Country/Region']
+        final_df['confirmed'] = tmp['confirmed'].iloc[:, -1]
+        final_df['recovered'] = tmp['recovered'].iloc[:, -1]
+        final_df['deaths'] = tmp['deaths'].iloc[:, -1]
+        final_df['mortality_rate'] = final_df['deaths']/final_df['confirmed']
+        final_df['recovery_rate'] = final_df['recovered']/final_df['confirmed']
+        final_df.sort_values(by=['confirmed'], ascending=False, inplace=True)
+
+        dict_to_save_in_mongo = {
+            'viz_type': 'country_wise_mortality_and_recovery_rates',
+            'data': final_df.to_dict('list'),
+            'created_at': datetime.timestamp(datetime.now())
+        }
+        return update_records_in_database('visualizations', dict_to_save_in_mongo,
+                                          dict_to_save_in_mongo['viz_type'])
 
 
 def pre_process_data_frame_for_different_columns(df: pd.DataFrame, item) -> pd.DataFrame:

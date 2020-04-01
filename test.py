@@ -18,28 +18,39 @@ def test():
             'viz_type': 'total_cases_global',
             'created_at': datetime.timestamp(datetime.now())
         }
+    master_list = []
     for key, df in time_series_dfs.items():
 
-        date_list = df.columns.values.tolist()
-        del date_list[0:4]
+        # because kingdom of Denmark is kingdom of denmark + greenland
+        index_location = df.loc[df['Province/State'] == 'Greenland'].index
+        df.iloc[index_location[0], 1] = 'Greenland'
+
         df.drop(['Province/State', 'Lat', 'Long'], axis=1, inplace=True)
         df = df.groupby(["Country/Region"]).agg(
             sum).reset_index()
         df_as_list = df.to_numpy().tolist()
-        list_of_country_wise_dicts = []
+        list_of_case_count_list = []
         for individual_country_list in df_as_list:
-            list_of_country_wise_dicts.append({
+            list_of_case_count_list.append({
                 'country': individual_country_list[0],
-                key: individual_country_list[1:],
-                'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y") for date_string in
-                          date_list]
+                key: individual_country_list[-1]
             })
 
-        dict_to_save_in_mongo = {
-            'viz_type': 'time_series_country_wise_' + key,
-            'data': list_of_country_wise_dicts,
-            'created_at': str(int(round(time.time() * 1000)))
-        }
+        master_list.append(list_of_case_count_list)
+
+    final_list = []
+
+    for i in range(len(master_list[0])):
+        final_list.append({
+            'country': master_list[0][i]['country'],
+            'confirmed': master_list[0][i]['confirmed'],
+            'recovered': master_list[1][i]['recovered'],
+            'deaths': master_list[2][i]['deaths'],
+            'mortality_rate': (master_list[2][i]['deaths'])/(master_list[0][i]['confirmed']),
+            'recovery_rate': (master_list[1][i]['recovered'])/(master_list[0][i]['confirmed']),
+        })
+
+    dict_to_save_in_mongo['data'] = final_list
 
 
 

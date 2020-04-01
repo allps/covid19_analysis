@@ -23,7 +23,7 @@ async def country_wise_mortality(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.visualizations
-        x = collection.find_one({'viz_type': 'country_wise_mortality'}, {"_id": 0})
+        x = collection.find_one({'viz_type': 'country_wise_mortality_and_recovery_rates'}, {"_id": 0})
         return JSONResponse(x)
 
 
