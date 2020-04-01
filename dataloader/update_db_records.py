@@ -184,15 +184,30 @@ def update_all_cases_cumulative_global_record(df: pd.DataFrame, df_type: str) ->
 
 
 def update_total_cases_global_record(df: pd.DataFrame, df_type: str) -> int:
-    if df_type == 'time_series':
-        return 0
-    cumulative_cases_global = get_total_cases_global_visualization_ready_dict(df)
+    if df_type == 'combined':
+        total_cases_global = get_total_cases_global_visualization_ready_dict(df)
+        return update_records_in_database('visualizations', total_cases_global,
+                                          total_cases_global['viz_type'])
+    else:
+        file_list = get_latest_time_series_file_dict()
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.visualizations
-        collection.insert(cumulative_cases_global)
-    return 0
+        time_series_dfs = {
+            'confirmed': pd.read_csv(file_list['confirmed']),
+            'recovered': pd.read_csv(file_list['recovered']),
+            'deaths': pd.read_csv(file_list['deaths'])
+        }
+        dict_to_save_in_mongo = {
+            'viz_type': 'total_cases_global',
+            'created_at': datetime.timestamp(datetime.now())
+        }
+        for key, df in time_series_dfs.items():
+            total_countries_affected = len(df["Country/Region"].unique())
+
+            dict_to_save_in_mongo['totalCountries'] = total_countries_affected
+            dict_to_save_in_mongo[key] = int((df.iloc[:, -1]).sum())
+
+        return update_records_in_database('visualizations', dict_to_save_in_mongo,
+                                          dict_to_save_in_mongo['viz_type'])
 
 
 def update_country_wise_mortality_rate(df: pd.DataFrame, df_type: str) -> int:
