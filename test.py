@@ -19,16 +19,28 @@ def test():
             'created_at': datetime.timestamp(datetime.now())
         }
     for key, df in time_series_dfs.items():
-        total_countries_affected = len(df["Country/Region"].unique())
 
-        dict_to_save_in_mongo['totalCountries'] = total_countries_affected
-        dict_to_save_in_mongo[key] = int((df.iloc[:, -1]).sum())
+        date_list = df.columns.values.tolist()
+        del date_list[0:4]
+        df.drop(['Province/State', 'Lat', 'Long'], axis=1, inplace=True)
+        df = df.groupby(["Country/Region"]).agg(
+            sum).reset_index()
+        df_as_list = df.to_numpy().tolist()
+        list_of_country_wise_dicts = []
+        for individual_country_list in df_as_list:
+            list_of_country_wise_dicts.append({
+                'country': individual_country_list[0],
+                key: individual_country_list[1:],
+                'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y") for date_string in
+                          date_list]
+            })
+
+        dict_to_save_in_mongo = {
+            'viz_type': 'time_series_country_wise_' + key,
+            'data': list_of_country_wise_dicts,
+            'created_at': str(int(round(time.time() * 1000)))
+        }
 
 
-        print(total_countries_affected)
-        print(key + ': ' + str(last_column.sum()))
-
-    print(cases_list)
-    print(dates_list)
 
 test()

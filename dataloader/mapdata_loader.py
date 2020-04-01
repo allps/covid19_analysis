@@ -18,6 +18,10 @@ def update_map_data() -> int:
     country_wise_cases_dicts = {}
 
     for key, df in country_wise_cases_dfs.items():
+        # because kingdom of Denmark is kingdom of denmark + greenland
+        index_location = df.loc[df['Province/State'] == 'Greenland'].index
+        df.iloc[index_location[0], 1] = 'Greenland'
+
         tmp_df = df.filter(['Country/Region'], axis=1)
         tmp_df[key] = df.iloc[:, -1]
         tmp_df = tmp_df.groupby(["Country/Region"]).agg({key: 'sum'}).reset_index()

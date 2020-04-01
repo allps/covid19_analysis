@@ -111,7 +111,8 @@ def update_country_wise_per_day_data(df: pd.DataFrame, df_type: str):
                 list_of_country_wise_dicts.append({
                     'country': individual_country_list[0],
                     key: individual_country_list[1:],
-                    'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y") for date_string in date_list]
+                    'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y") for date_string in
+                              date_list]
                 })
 
             dict_to_save_in_mongo = {
@@ -120,7 +121,8 @@ def update_country_wise_per_day_data(df: pd.DataFrame, df_type: str):
                 'created_at': str(int(round(time.time() * 1000)))
             }
 
-            result = update_records_in_database('visualizations', dict_to_save_in_mongo, dict_to_save_in_mongo['viz_type'])
+            result = update_records_in_database('visualizations', dict_to_save_in_mongo,
+                                                dict_to_save_in_mongo['viz_type'])
         return result
 
 
@@ -151,7 +153,8 @@ def update_basic_data_for_countries(df: pd.DataFrame, df_type: str) -> int:
 def update_all_cases_cumulative_global_record(df: pd.DataFrame, df_type: str) -> int:
     if df_type == 'combined':
         cumulative_cases_global = get_all_cases_cumulative_global_visualization_ready_dict(df)
-        return update_records_in_database('visualizations', cumulative_cases_global, cumulative_cases_global['viz_type'])
+        return update_records_in_database('visualizations', cumulative_cases_global,
+                                          cumulative_cases_global['viz_type'])
     else:
         file_list = get_latest_time_series_file_dict()
 
@@ -165,8 +168,8 @@ def update_all_cases_cumulative_global_record(df: pd.DataFrame, df_type: str) ->
         for key, df in time_series_dfs.items():
             d = df.columns.values.tolist()
             del d[0:4]
-            dates_list = [(datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y")).timestamp() for date_string in d]
-
+            dates_list = [(datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y")).timestamp() for
+                          date_string in d]
             df.drop(['Country/Region', 'Province/State', 'Lat', 'Long'], axis=1, inplace=True)
             cases_list[key] = df.sum(axis=0).tolist()
 
@@ -180,7 +183,6 @@ def update_all_cases_cumulative_global_record(df: pd.DataFrame, df_type: str) ->
         }
 
         return update_records_in_database('visualizations', dict_to_save_in_mongo, dict_to_save_in_mongo['viz_type'])
-
 
 
 def update_total_cases_global_record(df: pd.DataFrame, df_type: str) -> int:
