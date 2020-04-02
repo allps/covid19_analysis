@@ -90,24 +90,17 @@ def total_cases_statewise(request):
     covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
-    print(covid_us_df)
-
-    # state_data = covid_us_df[covid_us_df['state'] == 'Illinois']
-    # datewise_data = state_data.groupby(["date"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
-    # print(datewise_data["cases"].sum())
-    # print(datewise_data["deaths"].sum())
-
     state_list = covid_us_df['state'].unique()
 
     states_data_list = []
     for state in state_list:
         state_data = covid_us_df[covid_us_df['state'] == state]
-        datewise_data = state_data.groupby(["date"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
+        state_data2 = state_data.iloc[[-1]]
 
         dict = {
             'name': state,
-            'confirmed': int(datewise_data["cases"].max()),
-            'deaths': int(datewise_data['deaths'].max())
+            'confirmed': state_data2['cases'].tolist(),
+            'deaths': state_data2['deaths'].tolist()
         }
         states_data_list.append(dict)
 
@@ -135,8 +128,6 @@ def state_visualization_bargraph(request):
     # state_wise_df = covid_us_df.groupby(["state"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
 
     state_wise_df = covid_us_df.groupby('state').agg({'cases': 'max', 'deaths': 'max'}).reset_index()
-
-    print(state_wise_df.head(54))
 
     dict = {
         'viz_type': 'states_case_visualization',
