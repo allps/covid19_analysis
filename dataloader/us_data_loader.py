@@ -106,8 +106,8 @@ def total_cases_statewise(request):
 
         dict = {
             'name': state,
-            'confirmed': int(datewise_data["cases"].sum()),
-            'deaths': int(datewise_data['deaths'].sum())
+            'confirmed': int(datewise_data["cases"].max()),
+            'deaths': int(datewise_data['deaths'].max())
         }
         states_data_list.append(dict)
 
@@ -132,9 +132,11 @@ def state_visualization_bargraph(request):
     covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
-    state_wise_df = covid_us_df.groupby(["state"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
+    # state_wise_df = covid_us_df.groupby(["state"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
 
-    print(state_wise_df.head(50))
+    state_wise_df = covid_us_df.groupby('state').agg({'cases': 'max', 'deaths': 'max'}).reset_index()
+
+    print(state_wise_df.head(54))
 
     dict = {
         'viz_type': 'states_case_visualization',
