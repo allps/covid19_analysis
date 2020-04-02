@@ -401,7 +401,7 @@ routes = [
 
     Route('/us-data/day-wise', endpoint=fetch_us_data, methods=['GET']),
     Route('/us-data/each-state', endpoint=fetch_us_states_case_data_list_bargraph, methods=['GET']),
-    Route('/us-data/for-table', endpoint=fetch_us_states_basic_data_table, methods= ['GET']),
+    Route('/us-data/for-table', endpoint=fetch_us_states_basic_data_table, methods=['GET']),
 
 
     Route('/map/global', endpoint=global_map_data, methods=['GET'])

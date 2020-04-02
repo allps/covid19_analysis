@@ -30,12 +30,14 @@ def update_us_db(request):
         'date': [(datetime.strptime(str(date_string), "%Y-%m-%d %H:%M:%S")).timestamp() for
                  date_string in date_list],
         'confirmed': case_list,
-        'deaths': death_list
+        'deaths': death_list,
+        'totalConfirmedCases': int(datewise_us_df["cases"].iloc[-1]),
+        'totalDeathCases': int(datewise_us_df["deaths"].iloc[-1])
     }
 
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
-        collection = db.visualizations
+        collection = db.us_data
         collection.insert(dictionary)
 
     return JSONResponse('Data successfully saved to database', status_code=200)
@@ -76,7 +78,7 @@ def save_state_data(request):
 
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
-        collection = db.visualizations
+        collection = db.us_data
         collection.insert(dictionary)
 
     return JSONResponse('ue states data saved to mongo', status_code=200)
@@ -118,7 +120,7 @@ def total_cases_statewise(request):
 
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
-        collection = db.visualizations
+        collection = db.us_data
         collection.insert(dictionary)
 
     return JSONResponse('data updated', status_code=200)
@@ -146,7 +148,7 @@ def state_visualization_bargraph(request):
 
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
-        collection = db.visualizations
+        collection = db.us_data
         collection.insert(dict)
 
     return JSONResponse('data updated', status_code=200)
