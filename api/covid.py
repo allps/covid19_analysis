@@ -3,6 +3,30 @@ from pymongo import MongoClient
 from config import mongo_db_url, database_name
 
 
+async def fetch_us_states_basic_data_table(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        x = collection.find_one({'viz_type': 'total_cases_in_states'}, {"_id": 0})
+        return JSONResponse(x)
+
+
+async def fetch_us_states_case_data_list_bargraph(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        x = collection.find_one({'viz_type': 'states_case_visualization'}, {"_id": 0})
+        return JSONResponse(x)
+
+
+async def fetch_us_data(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.visualizations
+        x = collection.find_one({'viz_type': "us_data_daywise_visualization"}, {"_id": 0})
+        return JSONResponse(x)
+
+
 async def total_cases_count(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]

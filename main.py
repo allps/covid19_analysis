@@ -9,10 +9,12 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from dataloader import refresh_data, clear_all_temp_data, update_db
+from dataloader import refresh_data, clear_all_temp_data, update_db, update_us_db, save_state_data, total_cases_statewise, state_visualization_bargraph
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found, \
     country_data_visualization, show_countries_table
-from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found, global_map_data
+from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
+    country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph,\
+    fetch_us_states_basic_data_table
 
 
 async def totalCases(request):
@@ -390,6 +392,16 @@ routes = [
     Route('/system/refresh-data/{file_type}', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),
     Route('/system/refresh-database/{file_type}', endpoint=update_db, methods=['GET']),
+
+    ###############   USA DATA VISUALIZATION   ##########################
+    Route('/save/us-data', endpoint=update_us_db, methods=['GET']),
+    Route('/save-us-state-data', endpoint=save_state_data, methods=['GET']),
+    Route('/save/total-cases-in-states', endpoint=total_cases_statewise, methods=['GET']),
+    Route('/save/us-states/case-visualization', endpoint=state_visualization_bargraph, methods=['GET']),
+
+    Route('/us-data/day-wise', endpoint=fetch_us_data, methods=['GET']),
+    Route('/us-data/each-state', endpoint=fetch_us_states_case_data_list_bargraph, methods=['GET']),
+    Route('/us-data/for-table', endpoint=fetch_us_states_basic_data_table, methods= ['GET']),
 
 
     Route('/map/global', endpoint=global_map_data, methods=['GET'])
