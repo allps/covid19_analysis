@@ -132,17 +132,14 @@ def state_visualization_bargraph(request):
     covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
-    print(covid_us_df)
     state_wise_df = covid_us_df.groupby(["state"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
 
-    state_wise_plot = state_wise_df[state_wise_df["cases"] > 100].sort_values(["cases"]).head(54)
-    state_wise_plot2 = state_wise_df[state_wise_df["cases"] > 100].sort_values(["deaths"]).head(54)
-
+    print(state_wise_df.head(50))
 
     dict = {
         'viz_type': 'states_case_visualization',
-        'death_list': state_wise_plot2['deaths'].tolist(),
-        'case_list': state_wise_plot['cases'].tolist(),
+        'death_list': state_wise_df['deaths'].tolist(),
+        'case_list': state_wise_df['cases'].tolist(),
         'y_list': state_wise_df['state'].tolist()
     }
 
