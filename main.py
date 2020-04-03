@@ -395,7 +395,6 @@ routes = [
 
     ###############   USA DATA VISUALIZATION   ##########################
     Route('/save/us-data', endpoint=update_us_db, methods=['GET']),
-    Route('/save-us-state-data', endpoint=save_state_data, methods=['GET']),
     Route('/save/total-cases-in-states', endpoint=total_cases_statewise, methods=['GET']),
     Route('/save/us-states/case-visualization', endpoint=state_visualization_bargraph, methods=['GET']),
 
@@ -403,6 +402,8 @@ routes = [
     Route('/us-data/each-state', endpoint=fetch_us_states_case_data_list_bargraph, methods=['GET']),
     Route('/us-data/for-table', endpoint=fetch_us_states_basic_data_table, methods=['GET']),
 
+    # day wise data of each state in us-----------
+    # Route('/save-us-state-data', endpoint=save_state_data, methods=['GET']),
 
     Route('/map/global', endpoint=global_map_data, methods=['GET'])
 
