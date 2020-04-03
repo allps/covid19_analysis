@@ -18,7 +18,8 @@ from api import all_cases_cumulative_global, total_cases_count, country_wise_mor
 
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
     country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph,\
-    fetch_us_states_basic_data_table, fetch_india_data_linegraph, fetch_india_regional_data_bargraph
+    fetch_us_states_basic_data_table, fetch_india_data_linegraph, \
+    fetch_india_regional_data_for_table
 
 
 async def totalCases(request):
@@ -413,7 +414,7 @@ routes = [
     Route('/india-data', endpoint=india_data_update_db, methods=['GET']),
     Route('/india-regional-data', endpoint=india_current_regional_data_update_db, methods=['GET']),
     Route('/india-data/day-wise', endpoint=fetch_india_data_linegraph, methods=['GET']),
-    Route('/india-data/state-wise', endpoint=fetch_india_regional_data_bargraph, methods=['GET']),
+    Route('/india-data/for-table', endpoint=fetch_india_regional_data_for_table, methods=['GET']),
 
     Route('/map/global', endpoint=global_map_data, methods=['GET'])
 
