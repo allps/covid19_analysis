@@ -7,18 +7,8 @@ async def fetch_india_data_linegraph(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.india_data
-        date = collection.find_one({'viz_type': 'all_data'}, {"_id": 0, "data.day": 1})
-        total = collection.find_one({'viz_type': 'all_data'}, {"_id": 0, "data.summary.total": 1})
-        discharged = collection.find_one({'viz_type': 'all_data'}, {"_id": 0, "data.summary.discharged": 1})
-        deaths = collection.find_one({'viz_type': 'all_data'}, {"_id": 0, "data.summary.deaths": 1})
-
-        dictionary = {
-            'date': date,
-            'total': total,
-            'discharged': discharged,
-            'deaths': deaths
-        }
-        return JSONResponse(dictionary)
+        x = collection.find_one({'viz_type': 'all_data'}, {"_id": 0})
+        return JSONResponse(x)
 
 
 async def fetch_india_regional_data_for_table(request):
