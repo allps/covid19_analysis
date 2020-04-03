@@ -7,6 +7,7 @@ from bson import json_util
 from datetime import datetime
 from pymongo import MongoClient
 from starlette.responses import JSONResponse
+from .update_db_records import update_records_in_database
 from .mapdata_loader import update_map_data
 from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
 
@@ -35,10 +36,7 @@ def update_us_db(request):
         'totalDeathCases': int(datewise_us_df["deaths"].iloc[-1])
     }
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.us_data
-        collection.insert(dictionary)
+    update_records_in_database('us_data', dictionary, viz_type='us_data_daywise_visualization')
 
     return JSONResponse('Data successfully saved to database', status_code=200)
 
@@ -111,10 +109,7 @@ def total_cases_statewise(request):
 
     }
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.us_data
-        collection.insert(dictionary)
+    update_records_in_database('us_data', dictionary, viz_type='total_cases_in_states')
 
     return JSONResponse('data updated', status_code=200)
 
@@ -136,9 +131,6 @@ def state_visualization_bargraph(request):
         'y_list': state_wise_df['state'].tolist()
     }
 
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.us_data
-        collection.insert(dict)
+    update_records_in_database('us_data', dict, viz_type='states_case_visualization')
 
     return JSONResponse('data updated', status_code=200)

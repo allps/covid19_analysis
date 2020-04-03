@@ -9,12 +9,16 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from dataloader import refresh_data, clear_all_temp_data, update_db, update_us_db, save_state_data, total_cases_statewise, state_visualization_bargraph
+from dataloader import refresh_data, clear_all_temp_data, update_db, \
+    update_us_db, save_state_data, total_cases_statewise, state_visualization_bargraph, india_data_update_db, \
+    india_current_regional_data_update_db
+
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, country_data_found, \
     country_data_visualization, show_countries_table
+
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
     country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph,\
-    fetch_us_states_basic_data_table
+    fetch_us_states_basic_data_table, fetch_india_data_linegraph, fetch_india_regional_data_bargraph
 
 
 async def totalCases(request):
@@ -404,6 +408,12 @@ routes = [
 
     # day wise data of each state in us-----------
     # Route('/save-us-state-data', endpoint=save_state_data, methods=['GET']),
+
+    ############### India data visualization ###########################
+    Route('/india-data', endpoint=india_data_update_db, methods=['GET']),
+    Route('/india-regional-data', endpoint=india_current_regional_data_update_db, methods=['GET']),
+    Route('/india-data/day-wise', endpoint=fetch_india_data_linegraph, methods=['GET']),
+    Route('/india-data/state-wise', endpoint=fetch_india_regional_data_bargraph, methods=['GET']),
 
     Route('/map/global', endpoint=global_map_data, methods=['GET'])
 
