@@ -84,13 +84,13 @@ async def country_data_found(request):
 
 
 async def country_data_visualization(request):
+    req = request.path_params['country']
     try:
-        req = request.path_params['country']
-        print(req)
         with MongoClient(mongo_db_url) as client:
             db = client[database_name]
             collection = db.visualizations
-            country_doc = collection.find_one({"viz_type": "country_wise_dict",  "data.name": req}, {"_id": 0, "data.$": 1})
+            country_doc = collection.find_one({"viz_type": "country_wise_dict", "data.name": req},
+                                              {"_id": 0, "data.$": 1})
             return JSONResponse(country_doc)
     except:
         return JSONResponse({"country data not found": req}, status_code=404)

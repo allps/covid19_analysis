@@ -1,16 +1,11 @@
 import pandas as pd
 import os
-import json
-import re
-import time
-from bson import json_util
 from datetime import datetime
 from pymongo import MongoClient
 from starlette.responses import JSONResponse
 from .update_db_records import update_records_in_database
 from .load_data import fetch_file_from_url
-from .mapdata_loader import update_map_data
-from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
+from config import remote_urls, database_name, mongo_db_url
 
 
 def update_us_db(request):
