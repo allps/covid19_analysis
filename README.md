@@ -35,4 +35,5 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 [Pragati Pandey](https://www.linkedin.com/in/pragati2112/)
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
+[GNU General Public License v3.0
+GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0/)
