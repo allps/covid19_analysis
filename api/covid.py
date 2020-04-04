@@ -11,7 +11,7 @@ async def fetch_india_data_linegraph(request):
         return JSONResponse(x)
 
 
-async def fetch_india_regional_data_for_table(request):
+async def fetch_india_state_wise_data(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
         collection = db.india_data

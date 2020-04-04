@@ -3,17 +3,24 @@ from starlette.responses import JSONResponse
 import requests
 
 
-async def india_data_update_db(request):
+async def update_all_india_data(request):
+    return JSONResponse({
+        'historic_data': india_data_update_db(),
+        'regional_data': update_regional_data()
+    }, status_code=200)
+
+
+def india_data_update_db():
     api_response = requests.get('https://api.rootnet.in/covid19-in/stats/history')
     dict_to_throw_in_json = api_response.json()
     dict_to_throw_in_json['viz_type'] = 'all_data'
     update_records_in_database('india_data', dict_to_throw_in_json, viz_type='all_data')
-    return JSONResponse('data successfully saved', status_code=200)
+    return 'Updated historic data'
 
 
-async def india_current_regional_data_update_db(request):
+def update_regional_data():
     api_response = requests.get('https://api.rootnet.in/covid19-in/stats/latest')
     dict_to_throw_in_json = api_response.json()
     dict_to_throw_in_json['viz_type'] = 'all_regional_current_data'
     update_records_in_database('india_data', dict_to_throw_in_json, viz_type='all_regional_current_data')
-    return JSONResponse('data successfully saved', status_code=200)
+    return 'Updated regional data'

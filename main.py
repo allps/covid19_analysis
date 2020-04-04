@@ -6,15 +6,14 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 
 from dataloader import refresh_data, clear_all_temp_data, update_db, \
-    update_us_db, total_cases_statewise, state_visualization_bargraph, india_data_update_db, \
-    india_current_regional_data_update_db, refresh_all
+    update_us_db, total_cases_statewise, state_visualization_bargraph, update_all_india_data, refresh_all
 
 from api import country_data_visualization, show_countries_table
 
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
     country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph, \
     fetch_us_states_basic_data_table, fetch_india_data_linegraph, \
-    fetch_india_regional_data_for_table
+    fetch_india_state_wise_data
 
 day_wise_analysis_worldwide_routes = [
     Route('/cases/total', endpoint=total_cases_count, methods=["GET"]),
@@ -39,11 +38,10 @@ us_data_routes = [
 ]
 
 india_data_routes = [
-    Route('/india-data', endpoint=india_data_update_db, methods=['GET']),
-    Route('/india-regional-data', endpoint=india_current_regional_data_update_db, methods=['GET']),
+    Route('/india/update-data', endpoint=update_all_india_data, methods=['GET']),
 
     Route('/india-data/day-wise', endpoint=fetch_india_data_linegraph, methods=['GET']),
-    Route('/india-data/for-table', endpoint=fetch_india_regional_data_for_table, methods=['GET']),
+    Route('/data/india/state-wise', endpoint=fetch_india_state_wise_data, methods=['GET']),
 ]
 
 system_routes = [
