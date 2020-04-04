@@ -413,6 +413,7 @@ routes = [
     ############### India data visualization ###########################
     Route('/india-data', endpoint=india_data_update_db, methods=['GET']),
     Route('/india-regional-data', endpoint=india_current_regional_data_update_db, methods=['GET']),
+
     Route('/india-data/day-wise', endpoint=fetch_india_data_linegraph, methods=['GET']),
     Route('/india-data/for-table', endpoint=fetch_india_regional_data_for_table, methods=['GET']),
 

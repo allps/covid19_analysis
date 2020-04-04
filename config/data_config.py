@@ -8,7 +8,8 @@ remote_urls = {
     'recovered_time_series': 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
                              '/csse_covid_19_time_series/time_series_covid19_recovered_global.csv',
     'deaths_time_series': 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
-                          '/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
+                          '/csse_covid_19_time_series/time_series_covid19_deaths_global.csv',
+    'us_states_data': 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv'
 
 }
 

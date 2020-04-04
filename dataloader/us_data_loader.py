@@ -8,14 +8,19 @@ from datetime import datetime
 from pymongo import MongoClient
 from starlette.responses import JSONResponse
 from .update_db_records import update_records_in_database
+from .load_data import fetch_file_from_url
 from .mapdata_loader import update_map_data
 from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
 
 
 def update_us_db(request):
-    dataset_directory_path = os.getcwd() + "/data/"
-    dataset_file_list = os.listdir(dataset_directory_path)
-    covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
+    dataset_directory_path = os.getcwd() + os.sep + "data" + os.sep
+    fetch_file_from_url(remote_urls['us_states_data'],
+                        'us_states_data' + '.csv',
+                        directory_to_save=dataset_directory_path)
+
+    dataset_directory_path1 = os.getcwd() + "/data/"
+    covid_us_df = pd.read_csv(dataset_directory_path1 + 'us_states_data.csv')
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
 
@@ -43,8 +48,7 @@ def update_us_db(request):
 
 def save_state_data(request):
     dataset_directory_path = os.getcwd() + "/data/"
-    dataset_file_list = os.listdir(dataset_directory_path)
-    covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
+    covid_us_df = pd.read_csv(dataset_directory_path + 'us_states_data.csv')
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
     print(covid_us_df)
@@ -84,8 +88,7 @@ def save_state_data(request):
 
 def total_cases_statewise(request):
     dataset_directory_path = os.getcwd() + "/data/"
-    dataset_file_list = os.listdir(dataset_directory_path)
-    covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
+    covid_us_df = pd.read_csv(dataset_directory_path + 'us_states_data.csv')
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
     state_list = covid_us_df['state'].unique()
@@ -116,11 +119,9 @@ def total_cases_statewise(request):
 
 def state_visualization_bargraph(request):
     dataset_directory_path = os.getcwd() + "/data/"
-    dataset_file_list = os.listdir(dataset_directory_path)
-    covid_us_df = pd.read_csv(dataset_directory_path + dataset_file_list[2])
+    covid_us_df = pd.read_csv(dataset_directory_path + 'us_states_data.csv')
 
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
-    # state_wise_df = covid_us_df.groupby(["state"]).agg({"cases": 'sum', "deaths": 'sum'}).reset_index()
 
     state_wise_df = covid_us_df.groupby('state').agg({'cases': 'max', 'deaths': 'max'}).reset_index()
 
