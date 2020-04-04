@@ -1,4 +1,4 @@
-import logging
+import json
 import os
 import re
 import time
@@ -9,16 +9,27 @@ import pandas as pd
 from starlette.responses import JSONResponse
 from .mapdata_loader import update_map_data
 from config import remote_urls, dataset_directory_path, database_name, mongo_db_url
-from .load_data import get_latest_time_series_file_dict
+from .load_data import get_latest_time_series_file_dict, clear_all_temp_data, refresh_data
 
 
-async def update_db(request):
+async def refresh_all(request):
+    r1 = clear_all_temp_data(request)
+    r2 = refresh_data(request)
+    r3 = update_db(request)
+
+    return JSONResponse({
+        'clear-all-temp-data': json.loads(r1.body.decode('utf-8')),
+        'refresh-data': json.loads(r2.body.decode('utf-8')),
+        'update-db': json.loads(r3.body.decode('utf-8'))
+    }, status_code=200)
+
+
+def update_db(request):
     if update_all_cases_cumulative_global_record() == 0 and \
             update_total_cases_global_record() == 0 and \
             update_country_wise_mortality_rate() == 0 and \
             update_data_for_table() == 0 and \
             update_map_data() == 0 and \
-            update_basic_data_for_countries() == 0 and \
             update_country_wise_per_day_data() == 0:
         return JSONResponse({'message': 'Updated database with latest time series data'}, status_code=200)
     return JSONResponse({'message': 'Could not up date database with latest data'}, status_code=500)
@@ -135,18 +146,6 @@ def update_data_for_table() -> int:
     dict_to_save_in_mongo['data'] = final_list
     return update_records_in_database('visualizations', dict_to_save_in_mongo,
                                       dict_to_save_in_mongo['viz_type'])
-
-
-def update_basic_data_for_countries() -> int:
-    if df_type == 'time_series':
-        return 0
-    countries_basic_data = get_all_countries_basic_data(df)
-
-    with MongoClient(mongo_db_url) as client:
-        db = client[database_name]
-        collection = db.country_wise_data
-        collection.insert_many(countries_basic_data)
-    return 0
 
 
 def update_all_cases_cumulative_global_record() -> int:

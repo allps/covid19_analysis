@@ -11,6 +11,7 @@ from config import remote_urls, dataset_directory_path
 def clear_all_temp_data(request):
     if os.path.isdir(dataset_directory_path):
         shutil.rmtree(dataset_directory_path)
+        logging.info('Cleared')
         return JSONResponse({'message': dataset_directory_path + ' has been cleared.'}, status_code=200)
     return JSONResponse({'message': dataset_directory_path + ' does not exist.'}, status_code=200)
 

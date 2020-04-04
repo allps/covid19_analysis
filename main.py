@@ -7,7 +7,7 @@ from starlette.routing import Route
 
 from dataloader import refresh_data, clear_all_temp_data, update_db, \
     update_us_db, total_cases_statewise, state_visualization_bargraph, india_data_update_db, \
-    india_current_regional_data_update_db
+    india_current_regional_data_update_db, refresh_all
 
 from api import country_data_visualization, show_countries_table
 
@@ -47,9 +47,10 @@ india_data_routes = [
 ]
 
 system_routes = [
-    Route('/system/refresh-data/{file_type}', endpoint=refresh_data, methods=['GET']),
+    Route('/system/refresh-data', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),
-    Route('/system/refresh-database/{file_type}', endpoint=update_db, methods=['GET']),
+    Route('/system/refresh-database', endpoint=update_db, methods=['GET']),
+    Route('/system/refresh-all', endpoint=refresh_all, methods=['GET']),
 ]
 
 routes = day_wise_analysis_worldwide_routes + country_wise_analysis_routes + us_data_routes + india_data_routes + \
