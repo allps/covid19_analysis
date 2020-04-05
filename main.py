@@ -8,7 +8,7 @@ from starlette.routing import Route
 from dataloader import refresh_data, clear_all_temp_data, update_db, \
     update_us_db, total_cases_statewise, state_visualization_bargraph, update_all_india_data, refresh_all
 
-from api import country_data_visualization, show_countries_table
+from api import country_wise_time_series, show_countries_table
 
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
     country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph, \
@@ -23,7 +23,7 @@ day_wise_analysis_worldwide_routes = [
 
 country_wise_analysis_routes = [
     Route('/country/{country}', endpoint=country_data_found, methods=["GET", "POST"]),
-    Route('/country/day-wise/{country}', endpoint=country_data_visualization, methods=["GET", "POST"]),
+    Route('/country/time-series/{state_type}', endpoint=country_wise_time_series, methods=["GET", "POST"]),
     Route('/countries-table', endpoint=show_countries_table, methods=["GET"]),
 ]
 

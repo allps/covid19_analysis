@@ -83,17 +83,16 @@ async def country_data_found(request):
         return JSONResponse({"country not found": req})
 
 
-async def country_data_visualization(request):
-    req = request.path_params['country']
+async def country_wise_time_series(request):
+    state_type = request.path_params['state_type']
     try:
         with MongoClient(mongo_db_url) as client:
             db = client[database_name]
             collection = db.visualizations
-            country_doc = collection.find_one({"viz_type": "country_wise_dict", "data.name": req},
-                                              {"_id": 0, "data.$": 1})
+            country_doc = collection.find_one({"viz_type": "time_series_country_wise_" + state_type}, {"_id": 0})
             return JSONResponse(country_doc)
     except:
-        return JSONResponse({"country data not found": req}, status_code=404)
+        return JSONResponse({'message': 'Invalid stat provided: ' + state_type}, status_code=404)
 
 
 async def show_countries_table(request):

@@ -83,7 +83,7 @@ def update_country_wise_per_day_data():
             list_of_country_wise_dicts.append({
                 'country': individual_country_list[0],
                 key: individual_country_list[1:],
-                'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y") for date_string in
+                'dates': [datetime.strptime(re.sub('/20$', '/2020', date_string), "%m/%d/%Y").timestamp() for date_string in
                           date_list]
             })
 
