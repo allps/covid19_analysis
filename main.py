@@ -32,9 +32,9 @@ us_data_routes = [
     Route('/save/total-cases-in-states', endpoint=total_cases_statewise, methods=['GET']),
     Route('/save/us-states/case-visualization', endpoint=state_visualization_bargraph, methods=['GET']),
 
-    Route('/us-data/day-wise', endpoint=fetch_us_data, methods=['GET']),
-    Route('/us-data/each-state', endpoint=fetch_us_states_case_data_list_bargraph, methods=['GET']),
-    Route('/us-data/for-table', endpoint=fetch_us_states_basic_data_table, methods=['GET']),
+    Route('/data/usa/day-wise', endpoint=fetch_us_data, methods=['GET']),
+    Route('/data/usa/each-state', endpoint=fetch_us_states_case_data_list_bargraph, methods=['GET']),
+    Route('/data/usa/for-table', endpoint=fetch_us_states_basic_data_table, methods=['GET']),
 ]
 
 india_data_routes = [
