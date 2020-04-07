@@ -9,7 +9,10 @@ remote_urls = {
                              '/csse_covid_19_time_series/time_series_covid19_recovered_global.csv',
     'deaths_time_series': 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data'
                           '/csse_covid_19_time_series/time_series_covid19_deaths_global.csv',
-    'us_states_data': 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv'
+    'us_states_data': 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv',
+    'switzerland_data_confirmed_cases': 'https://raw.githubusercontent.com/daenuprobst/covid19-cases-switzerland/master/covid19_cases_switzerland_openzh.csv',
+    'switzerland_data_recovered_cases': 'https://raw.githubusercontent.com/daenuprobst/covid19-cases-switzerland/master/covid19_released_switzerland_openzh.csv',
+    'switzerland_data_death_cases': 'https://raw.githubusercontent.com/daenuprobst/covid19-cases-switzerland/master/covid19_fatalities_switzerland_openzh.csv',
 
 }
 

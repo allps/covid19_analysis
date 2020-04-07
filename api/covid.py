@@ -3,6 +3,38 @@ from pymongo import MongoClient
 from config import mongo_db_url, database_name
 
 
+async def fetch_switzerland_cases_data(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.switzerland_data
+        x = collection.find_one({'viz_type': 'recovered_data_day_wise_list'}, {"_id": 0})
+        y = collection.find_one({'viz_type': 'confirmed_data_day_wise_list'}, {"_id": 0})
+        z = collection.find_one({'viz_type': 'death_data_day_wise_list'}, {"_id": 0})
+
+        dictionary = {
+            'confirmedCases': y,
+            'recoveredCases': x,
+            'deathCases': z
+        }
+        return JSONResponse(dictionary)
+
+
+async def fetch_kanton_wise_data(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.switzerland_data
+        x = collection.find_one({'viz_type': 'recovered_cases_per_kanton_day_wise'}, {"_id": 0})
+        y = collection.find_one({'viz_type': 'confirmed_cases_per_kanton_day_wise'}, {"_id": 0})
+        z = collection.find_one({'viz_type': 'death_cases_per_kanton_day_wise'}, {"_id": 0})
+
+        dictionary = {
+            'confirmedCases': y,
+            'recoveredCases': x,
+            'deathCases': z
+        }
+        return JSONResponse(dictionary)
+
+
 async def fetch_india_data_linegraph(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]

@@ -6,14 +6,15 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route
 
 from dataloader import refresh_data, clear_all_temp_data, update_db, \
-    update_us_db, total_cases_statewise, state_visualization_bargraph, update_all_india_data, refresh_all
+    update_us_db, total_cases_statewise, state_visualization_bargraph, update_all_india_data, refresh_all, \
+    update_switzerland_db
 
 from api import country_wise_time_series, show_countries_table
 
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
     country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph, \
     fetch_us_states_basic_data_table, fetch_india_data_linegraph, \
-    fetch_india_state_wise_data
+    fetch_india_state_wise_data, fetch_switzerland_cases_data, fetch_kanton_wise_data
 
 day_wise_analysis_worldwide_routes = [
     Route('/cases/total', endpoint=total_cases_count, methods=["GET"]),
@@ -44,6 +45,13 @@ india_data_routes = [
     Route('/data/india/state-wise', endpoint=fetch_india_state_wise_data, methods=['GET']),
 ]
 
+switzerland_data_routes = [
+    Route('/switzerland/update-data', endpoint=update_switzerland_db, methods=['GET']),
+
+    Route('/switzerland-data/day-wise', endpoint=fetch_switzerland_cases_data, methods=['GET']),
+    Route('/switzerland-data/kanton-wise', endpoint=fetch_kanton_wise_data, methods=['GET']),
+]
+
 system_routes = [
     Route('/system/refresh-data', endpoint=refresh_data, methods=['GET']),
     Route('/system/clear_all', endpoint=clear_all_temp_data, methods=['GET']),
@@ -52,7 +60,7 @@ system_routes = [
 ]
 
 routes = day_wise_analysis_worldwide_routes + country_wise_analysis_routes + us_data_routes + india_data_routes + \
-         system_routes
+         system_routes + switzerland_data_routes
 
 routes.append(Route('/map/global', endpoint=global_map_data, methods=['GET']))
 
