@@ -234,5 +234,6 @@ country_code_dict = {'Afghanistan': 'AF',
                      'Laos': 'LAO',
                      'Monaco': 'MCO',
                      'North Macedonia': 'MKD',
-                     'San Marino': 'SMR'
+                     'San Marino': 'SMR',
+                     'Sao Tome and Principe': 'STP'
                     }
