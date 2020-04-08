@@ -56,7 +56,7 @@ def save_confirmed_cases(df_confirmed):
         kanton_data_list = df_confirmed1[column].tolist()
         dict1 = {
             'kanton': column,
-            'data': kanton_data_list
+            'confirmed': kanton_data_list
         }
         kanton_details_list.append(dict1)
 
@@ -98,7 +98,7 @@ def save_recovered_cases(df_recovered):
         kanton_data_list = df_recovered1[column].tolist()
         dict1 = {
             'kanton': column,
-            'data': kanton_data_list
+            'recovered': kanton_data_list
         }
         kanton_details_list.append(dict1)
 
@@ -141,7 +141,7 @@ def save_death_cases(df_death):
         kanton_data_list = df_death1[column].tolist()
         dict1 = {
             'kanton': column,
-            'data': kanton_data_list
+            'death': kanton_data_list
         }
         kanton_details_list.append(dict1)
 
