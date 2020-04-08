@@ -14,7 +14,7 @@ from api import country_wise_time_series, show_countries_table
 from api import all_cases_cumulative_global, total_cases_count, country_wise_mortality, \
     country_data_found, global_map_data, fetch_us_data, fetch_us_states_case_data_list_bargraph, \
     fetch_us_states_basic_data_table, fetch_india_data_linegraph, \
-    fetch_india_state_wise_data, fetch_switzerland_cases_data, fetch_kanton_wise_data
+    fetch_india_state_wise_data, fetch_switzerland_cases_data, fetch_kanton_wise_data, fetch_switzerland_data_for_table
 
 day_wise_analysis_worldwide_routes = [
     Route('/cases/total', endpoint=total_cases_count, methods=["GET"]),
@@ -50,6 +50,7 @@ switzerland_data_routes = [
 
     Route('/switzerland-data/day-wise', endpoint=fetch_switzerland_cases_data, methods=['GET']),
     Route('/switzerland-data/kanton-wise', endpoint=fetch_kanton_wise_data, methods=['GET']),
+    Route('/switzerland-data/for-table', endpoint=fetch_switzerland_data_for_table, methods=['GET']),
 ]
 
 system_routes = [

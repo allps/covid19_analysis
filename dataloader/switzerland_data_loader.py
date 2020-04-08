@@ -28,6 +28,7 @@ def update_switzerland_db(request):
     save_confirmed_cases(df_confirmed)
     save_recovered_cases(df_recovered)
     save_death_cases(df_death)
+    data_for_table(df_confirmed, df_death, df_recovered)
 
     return JSONResponse('files fetched', status_code=200)
 
@@ -156,4 +157,39 @@ def save_death_cases(df_death):
     update_records_in_database('switzerland_data', dict, viz_type='death_data_day_wise_list')
     update_records_in_database('switzerland_data', dictionary, viz_type='death_cases_per_kanton_day_wise')
 
+    return 0
+
+
+def data_for_table(df_confirmed, df_death, df_recovered):
+    df_death["Date"] = pd.to_datetime(df_death["Date"])
+    df_death.fillna(method='ffill', inplace=True)
+    df_death.fillna(0, inplace=True)
+
+    df_confirmed["Date"] = pd.to_datetime(df_confirmed["Date"])
+    df_confirmed.fillna(method='ffill', inplace=True)
+    df_confirmed.fillna(0, inplace=True)
+
+    df_recovered["Date"] = pd.to_datetime(df_recovered["Date"])
+    df_recovered.fillna(method='ffill', inplace=True)
+    df_recovered.fillna(0, inplace=True)
+
+    df_death1 = df_death.drop(columns=['Date'])
+    columns = list(df_death1)
+
+    kanton_details = []
+    for column in columns:
+        dict={
+            'kanton': column,
+            'confirmed': int(df_confirmed[column].iloc[-1]),
+            'recovered': int(df_recovered[column].iloc[-1]),
+            'death': int(df_death[column].iloc[-1])
+        }
+        kanton_details.append(dict)
+
+    dictionary = {
+        'viz_type': 'kanton_table',
+        'data': kanton_details
+    }
+
+    update_records_in_database('switzerland_data', dictionary, viz_type='kanton_table')
     return 0

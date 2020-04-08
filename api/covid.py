@@ -3,6 +3,14 @@ from pymongo import MongoClient
 from config import mongo_db_url, database_name
 
 
+async def fetch_switzerland_data_for_table(request):
+    with MongoClient(mongo_db_url) as client:
+        db = client[database_name]
+        collection = db.switzerland_data
+        x = collection.find_one({'viz_type': 'kanton_table'}, {"_id": 0})
+        return JSONResponse(x)
+
+
 async def fetch_switzerland_cases_data(request):
     with MongoClient(mongo_db_url) as client:
         db = client[database_name]
