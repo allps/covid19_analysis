@@ -37,14 +37,14 @@ def update_us_db(request):
     }
 
     update_records_in_database('us_data', dictionary, viz_type='us_data_daywise_visualization')
+    save_state_data(covid_us_df)
+    total_cases_statewise(covid_us_df)
+    state_visualization_bargraph(covid_us_df)
 
     return JSONResponse('Data successfully saved to database', status_code=200)
 
 
-def save_state_data(request):
-    dataset_directory_path = os.getcwd() + "/data/"
-    covid_us_df = pd.read_csv(dataset_directory_path + 'us_states_data.csv')
-
+def save_state_data(covid_us_df):
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
     print(covid_us_df)
     state_list = covid_us_df['state'].unique()
@@ -78,13 +78,10 @@ def save_state_data(request):
         collection = db.us_data
         collection.insert(dictionary)
 
-    return JSONResponse('ue states data saved to mongo', status_code=200)
+    return 0
 
 
-def total_cases_statewise(request):
-    dataset_directory_path = os.getcwd() + "/data/"
-    covid_us_df = pd.read_csv(dataset_directory_path + 'us_states_data.csv')
-
+def total_cases_statewise(covid_us_df):
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
     state_list = covid_us_df['state'].unique()
 
@@ -109,13 +106,10 @@ def total_cases_statewise(request):
 
     update_records_in_database('us_data', dictionary, viz_type='total_cases_in_states')
 
-    return JSONResponse('data updated', status_code=200)
+    return 0
 
 
-def state_visualization_bargraph(request):
-    dataset_directory_path = os.getcwd() + "/data/"
-    covid_us_df = pd.read_csv(dataset_directory_path + 'us_states_data.csv')
-
+def state_visualization_bargraph(covid_us_df):
     covid_us_df["date"] = pd.to_datetime(covid_us_df["date"])
 
     state_wise_df = covid_us_df.groupby('state').agg({'cases': 'max', 'deaths': 'max'}).reset_index()
@@ -129,4 +123,4 @@ def state_visualization_bargraph(request):
 
     update_records_in_database('us_data', dict, viz_type='states_case_visualization')
 
-    return JSONResponse('data updated', status_code=200)
+    return 0
